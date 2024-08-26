@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+# Default values
+OUTPUT_DIR="$HOME/Videos"
+FILENAME="recording_$(date +'%Y-%m-%d_%H-%M-%S').mkv"
+AUDIO_INPUT="default" # Set to "none" if you don't want to capture audio
+SCREEN_AREA="full" # Can be set to "full", "region", or "window"
+BITRATE="4000K" # Default video bitrate
+FPS="30" # Default frames per second
+OUTPUT=""
+DURATION=""
+
+[[ -n $OUTPUT_DIR ]] && mkdir -p $OUTPUT_DIR
+
+while getopts "o:f:a:s:b:r:d:h" opt; do
+  case $opt in
+    o) OUTPUT_DIR="$OPTARG" ;;
+    f) FILENAME="$OPTARG" ;;
+    a) AUDIO_INPUT="$OPTARG" ;;
+    s) SCREEN_AREA="$OPTARG" ;;
+    b) BITRATE="$OPTARG" ;;
+    r) FPS="$OPTARG" ;;
+    d) DURATION="$OPTARG" ;;
+    h) echo "Usage: $0 [-o output_directory] [-f filename] [-a audio_input] [-s screen_area] [-b bitrate] [-r fps] [-d duration]"
+       echo "  -o output_directory: Directory to save the recording (default: $HOME/Videos)"
+       echo "  -f filename: Name of the output file (default: recording_<timestamp>.mkv)"
+       echo "  -a audio_input: Audio input device or 'none' for no audio (default: default)"
+       echo "  -s screen_area: 'full' for full screen, 'region' to select a region, or 'window' to select a window (default: full)"
+       echo "  -b bitrate: Set the video bitrate (default: 4000K)"
+       echo "  -r fps: Set the frames per second (default: 30)"
+       echo "  -d duration: Set the maximum duration for the recording (e.g., 00:05:00 for 5 minutes)"
+       exit 0 ;;
+    *) echo "Invalid option: -$OPTARG" >&2
+       exit 1 ;;
+  esac
+done
+
+if [ -z "$OUTPUT" ]; then
+  echo "Available outputs:"
+  swaymsg -t get_outputs | jq -r '.[] | "\(.name) - \(.make) \(.model) \(.scale)x scale, \(.rect.width)x\(.rect.height) resolution"' 
+  read -p "Select an output to record (leave blank to use the default): " OUTPUT
+fi
+
+CMD="wf-recorder -f \"$OUTPUT_DIR/$FILENAME\" -c h264_vaapi -p \"$FPS\" --codec-options bitrate=$BITRATE"
+
+if [ "$SCREEN_AREA" == "region" ]; then
+  CMD+=" --geometry $(slurp)"
+elif [ "$SCREEN_AREA" == "window" ]; then
+  CMD+=" --output $(swaymsg -t get_tree | jq -r '.. | select(.focused? == true).rect | "\(.x),\(.y) \(.width)x\(.height)"')"
+elif [ ! -z "$OUTPUT" ]; then
+  CMD+=" --output \"$OUTPUT\""
+fi
+
+if [ "$AUDIO_INPUT" != "none" ]; then
+  CMD+=" -a \"$AUDIO_INPUT\""
+fi
+
+if [ ! -z "$DURATION" ]; then
+  CMD+=" --max-duration \"$DURATION\""
+fi
+
+notify-send "Recording started" "Output: $OUTPUT_DIR/$FILENAME"
+bash -c $CMD
+
+notify-send "Recording stopped" "Saved to $OUTPUT_DIR/$FILENAME"
+
+echo "Recording saved to $OUTPUT_DIR/$FILENAME"

@@ -1,0 +1,19 @@
+import = [
+  "~/.config/alacritty/themes/catppuccin.toml"
+]
+
+[window]
+decorations = "None"
+opacity = 0.95
+blur = true
+startup_mode = "Windowed"
+
+[font]
+normal = { family = "Fira Code", style = "Regular" }
+size = 10
+
+[selection]
+save_to_clipboard = true
+
+[cursor]
+style = { shape = "Beam", blinking = "On" }

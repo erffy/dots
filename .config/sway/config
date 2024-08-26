@@ -1,0 +1,12 @@
+set $super Mod4
+set $alt Mod1
+
+output * bg $HOME/.config/sway/wallpapers/dark.jpg fill
+seat seat0 xcursor_theme Bibata_Ghost 17
+
+bar {
+	swaybar_command waybar
+	workspace_buttons yes
+}
+
+include $HOME/.config/sway/config.d/*
