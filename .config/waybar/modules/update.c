@@ -5,10 +5,10 @@
 #include <unistd.h>
 
 #define LOG_FILE "/var/tmp/update.log"
-#define MANAGERS_COUNT 3
+#define LOCK_FILE "/var/tmp/update.lock"
 #define COMMAND_SIZE 256
 
-const char *managers[MANAGERS_COUNT] = {"yay", "pacman", "paru"};
+const char *managers[] = {"yay", "pacman", "paru"};
 
 bool run_command(const char *command, FILE *log_fp)
 {
@@ -29,9 +29,17 @@ bool run_command(const char *command, FILE *log_fp)
 
 int main()
 {
+  remove(LOG_FILE);
+
   if (geteuid() != 0)
   {
     fprintf(stderr, "This script requires root privileges.\n");
+    return EXIT_FAILURE;
+  }
+
+  if (access(LOCK_FILE, F_OK) == 0)
+  {
+    fprintf(stderr, "Another instance of the script is running.\n");
     return EXIT_FAILURE;
   }
 
@@ -42,9 +50,17 @@ int main()
     return EXIT_FAILURE;
   }
 
+  FILE *lock_fp = fopen(LOCK_FILE, "w");
+  if (!lock_fp)
+  {
+    perror("fopen");
+    fclose(log_fp);
+    return EXIT_FAILURE;
+  }
+
   bool update_success = 0;
 
-  for (int i = 0; i < MANAGERS_COUNT; ++i)
+  for (int i = 0; i < (sizeof(managers) / sizeof(managers[0])); ++i)
   {
     char command[COMMAND_SIZE];
     snprintf(command, sizeof(command), "%s -Syu --noconfirm --noprogressbar 2>&1", managers[i]);
@@ -63,5 +79,9 @@ int main()
     fprintf(log_fp, "No known package manager found or all updates failed.\nUpdate failed.\n");
 
   fclose(log_fp);
+
+  fclose(lock_fp);
+  remove(LOCK_FILE);
+
   return EXIT_SUCCESS;
 }
