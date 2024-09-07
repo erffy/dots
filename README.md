@@ -6,9 +6,9 @@
 # clone repository
 git clone https://github.com/erffy/dotfiles.git
 # install required packages (requires root)
-pacman -S --needed - < dotfiles/packages
+pacman -S --needed $(cat dotfiles/packages)
 # copy repository contents to HOME
-cp -r dotfiles/* $HOME
+cp -r dotfiles/.* $HOME
 # enable Update Lock service
 systemctl --user daemon-reload
 systemctl --user enable --now updatelock
