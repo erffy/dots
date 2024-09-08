@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <string.h>
 #include <unistd.h>
 
 #define LOG_FILE "/var/tmp/update.log"
 #define LOCK_FILE "/var/tmp/update.lock"
 #define COMMAND_SIZE 256
 
-const char *managers[] = {"yay", "pacman", "paru"};
+const char *managers[] = {"yay", "paru", "pacman"};
 
 bool run_command(const char *command, FILE *log_fp)
 {
@@ -23,14 +22,11 @@ bool run_command(const char *command, FILE *log_fp)
   while (fgets(buffer, sizeof(buffer), fp))
     fputs(buffer, log_fp);
 
-  int status = pclose(fp);
-  return (status == 0);
+  return pclose(fp) == 0;
 }
 
 int main()
 {
-  remove(LOG_FILE);
-
   if (geteuid() != 0)
   {
     fprintf(stderr, "This script requires root privileges.\n");
@@ -59,11 +55,10 @@ int main()
   }
 
   bool update_success = 0;
-
-  for (int i = 0; i < (sizeof(managers) / sizeof(managers[0])); ++i)
+  for (size_t i = 0; i < (sizeof(managers) / sizeof(managers[0])); ++i)
   {
     char command[COMMAND_SIZE];
-    snprintf(command, sizeof(command), "%s -Syu --noconfirm --noprogressbar 2>&1", managers[i]);
+    snprintf(command, sizeof(command), "%s -Syu --noconfirm --noprogressbar --color=never", managers[i]);
 
     if (run_command(command, log_fp))
     {
@@ -73,13 +68,9 @@ int main()
     fprintf(log_fp, "%s update failed. Check the log for details.\n", managers[i]);
   }
 
-  if (update_success)
-    fprintf(log_fp, "System update completed successfully.\n");
-  else
-    fprintf(log_fp, "No known package manager found or all updates failed.\nUpdate failed.\n");
+  fprintf(log_fp, update_success ? "System update completed successfully.\n" : "Update failed. No known package manager found or all updates failed.\n");
 
   fclose(log_fp);
-
   fclose(lock_fp);
   remove(LOCK_FILE);
 
