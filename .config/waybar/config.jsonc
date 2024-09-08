@@ -101,7 +101,6 @@
     "min-length": 10,
     "max-length": 35
   },
-  // This module requires 'pacman-contrib' package
   "custom/updates": {
     "interval": 120,
     "exec": "~/.config/waybar/modules/checkupdates",
