@@ -7,31 +7,37 @@ NC='\033[0m'
 
 OUT_DIR="."
 LOG_FILE="compile.log"
+OPTS=""
 
-[[ -n $OUT_DIR ]] && mkdir -p $OUT_DIR
+# Create the output directory if not the current directory
+[[ $OUT_DIR != "." ]] && mkdir -p "$OUT_DIR"
 
-if ! command -v gcc &>/dev/null; then
-  echo -e "${RED}Error: gcc is not installed. Please install gcc to proceed.${NC}"
-  exit 1
-fi
+# Check for gcc
+command -v gcc &>/dev/null || { echo -e "${RED}Error: gcc is not installed.${NC}"; exit 1; }
 
+# Handle help
 if [[ "$1" == "--help" ]]; then
   echo "Usage: $0 [OPTIONS]"
   echo "Compile all .c files in the current directory."
   echo
   echo "Options:"
   echo "  --help       Show this help message and exit"
-  echo "  -o DIR       Specify output directory (default: ./bin)"
+  echo "  -o DIR       Specify output directory (default: current directory)"
   echo "  -O OPTS      Pass optimization options to gcc (e.g., -O2, -O3)"
   exit 0
 fi
 
+# Parse options
 while getopts "o:O:" opt; do
   case "$opt" in
-  o) OUT_DIR="$OPTARG" ;;
-  O) OPTS="$OPTARG" ;;
+    o) OUT_DIR="$OPTARG"; mkdir -p "$OUT_DIR" ;;
+    O) OPTS="$OPTARG" ;;
   esac
 done
+
+log() {
+  echo "$1 at $(date '+%Y-%m-%d %H:%M:%S')" >> "$LOG_FILE"
+}
 
 compile() {
   local src_file="$1"
@@ -39,24 +45,25 @@ compile() {
 
   echo -e "${YELLOW}Compiling $src_file...${NC}"
 
-  local build_time=$(date '+%m/%d/%Y %I:%M:%S %p')
-
   if gcc -o "$output_file" "$src_file" $OPTS; then
     echo -e "${GREEN}$src_file compiled successfully.${NC}"
-    echo "SUCCESS: $src_file at $build_time" >>$LOG_FILE
+    log "SUCCESS: $src_file"
   else
     echo -e "${RED}Failed to compile $src_file${NC}"
-    echo "FAILED: $src_file at $build_time" >>$LOG_FILE
+    log "FAILED: $src_file"
   fi
 }
 
-rm $LOG_FILE
+# Remove log file if it exists
+[ -f $LOG_FILE ] && rm $LOG_FILE
 
+# Compile .c files in parallel
 for src_file in *.c; do
-  [ -e "$src_file" ] || continue
-  compile "$src_file" &
+  [ -e $src_file ] || continue
+  compile $src_file &
 done
 
+# Wait for all background jobs to finish
 wait
 
 echo -e "${GREEN}All modules compiled.${NC}"

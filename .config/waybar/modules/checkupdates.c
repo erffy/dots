@@ -6,23 +6,51 @@
 
 void escape_json(const char *input, char *output, size_t size)
 {
-  static const char escapes[256] = {['\"'] = '\"', ['\\'] = '\\', ['\b'] = 'b', ['\f'] = 'f', ['\n'] = 'n', ['\r'] = 'r', ['\t'] = 't'};
   size_t j = 0;
   for (size_t i = 0; input[i] && j < size - 1; i++)
   {
     char ch = input[i];
-    if (ch < 256 && escapes[(unsigned char)ch])
+    switch (ch)
     {
+    case '\"':
+    case '\\':
+    case '\b':
+    case '\f':
+    case '\n':
+    case '\r':
+    case '\t':
       if (j + 2 < size)
       {
         output[j++] = '\\';
-        output[j++] = escapes[(unsigned char)ch];
+        switch (ch)
+        {
+        case '\"':
+          output[j++] = '\"';
+          break;
+        case '\\':
+          output[j++] = '\\';
+          break;
+        case '\b':
+          output[j++] = 'b';
+          break;
+        case '\f':
+          output[j++] = 'f';
+          break;
+        case '\n':
+          output[j++] = 'n';
+          break;
+        case '\r':
+          output[j++] = 'r';
+          break;
+        case '\t':
+          output[j++] = 't';
+          break;
+        }
       }
-    }
-    else
-    {
-      if (j + 1 < size)
-        output[j++] = ch;
+      break;
+    default:
+      output[j++] = ch;
+      break;
     }
   }
   output[j] = '\0';
@@ -30,12 +58,10 @@ void escape_json(const char *input, char *output, size_t size)
 
 int main()
 {
-  char cmd[256];
+  char cmd[BUFFER_SIZE];
   snprintf(cmd, sizeof(cmd), "%s/.local/bin/checkupdates", getenv("HOME"));
 
   char updates[BUFFER_SIZE] = {0};
-  char *line = NULL;
-  size_t len = 0;
   int updates_count = 0;
 
   FILE *fp = popen(cmd, "r");
@@ -45,32 +71,34 @@ int main()
     return EXIT_FAILURE;
   }
 
-  while (getline(&line, &len, fp) != -1)
+  char line[BUFFER_SIZE];
+  while (fgets(line, sizeof(line), fp))
   {
     char pkg_name[BUFFER_SIZE], local_version[BUFFER_SIZE], new_version[BUFFER_SIZE];
     if (sscanf(line, "%s %s -> %s", pkg_name, local_version, new_version) == 3)
     {
-      char formatted_update[BUFFER_SIZE];
-      snprintf(formatted_update, sizeof(formatted_update), "%s: %s -> %s", pkg_name, local_version, new_version);
-      strncat(updates, formatted_update, sizeof(updates) - strlen(updates) - 1);
-      strncat(updates, "\n", sizeof(updates) - strlen(updates) - 1);
+      int n = snprintf(updates + strlen(updates), sizeof(updates) - strlen(updates), "%s: %s -> %s\n", pkg_name, local_version, new_version);
+      if (n < 0 || (size_t)n >= sizeof(updates) - strlen(updates))
+        break;
       updates_count++;
     }
   }
 
-  pclose(fp);
-  free(line);
+  if (pclose(fp) == -1)
+  {
+    perror("pclose");
+    return EXIT_FAILURE;
+  }
 
-  size_t updates_len = strlen(updates);
-  if (updates_len > 0 && updates[updates_len - 1] == '\n')
-    updates[updates_len - 1] = '\0';
+  if (updates_count > 0 && updates[strlen(updates) - 1] == '\n')
+    updates[strlen(updates) - 1] = '\0';
 
   char pkg_list_escaped[BUFFER_SIZE];
   escape_json(updates, pkg_list_escaped, sizeof(pkg_list_escaped));
 
   printf(updates_count > 0
-             ? "{\"text\":\"   %d\",\"tooltip\":\"You have %d pending updates.\\n\\n%s\"}"
-             : "{\"text\":\"\",\"tooltip\":\"\",\"class\":\"hidden\"}",
+             ? "{\"text\":\"   %d\",\"tooltip\":\"You have %d pending updates.\\n\\n%s\"}\n"
+             : "{\"text\":\"\",\"tooltip\":\"\",\"class\":\"hidden\"}\n",
          updates_count, updates_count, pkg_list_escaped);
 
   return 0;
