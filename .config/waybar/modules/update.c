@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 
 #define LOG_FILE "/var/tmp/update.log"
 #define LOCK_FILE "/var/tmp/update.lock"
@@ -11,18 +13,57 @@ const char *managers[] = {"yay", "paru", "pacman"};
 
 bool run_command(const char *command, FILE *log_fp)
 {
-  FILE *fp = popen(command, "r");
-  if (!fp)
+  int pipe_fd[2];
+  if (pipe(pipe_fd) == -1)
   {
-    perror("popen");
-    return 0;
+    perror("pipe");
+    return false;
   }
 
-  char buffer[COMMAND_SIZE];
-  while (fgets(buffer, sizeof(buffer), fp))
-    fputs(buffer, log_fp);
+  pid_t pid = fork();
+  if (pid == -1)
+  {
+    perror("fork");
+    return false;
+  }
 
-  return pclose(fp) == 0;
+  if (pid == 0)
+  {
+    close(pipe_fd[0]);
+    dup2(pipe_fd[1], STDOUT_FILENO);
+    dup2(pipe_fd[1], STDERR_FILENO);
+    close(pipe_fd[1]);
+
+    char *const argv[] = {"/usr/bin/env sh", "-c", (char *)command, NULL};
+    execvp("/usr/bin/env sh", argv);
+    _exit(EXIT_FAILURE);
+  }
+  else
+  {
+    close(pipe_fd[1]);
+    char buffer[COMMAND_SIZE];
+
+    while (read(pipe_fd[0], buffer, sizeof(buffer) - 1) > 0)
+      fputs(buffer, log_fp);
+
+    close(pipe_fd[0]);
+
+    int status;
+    waitpid(pid, &status, 0);
+    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+  }
+}
+
+bool create_lock_file(const char *lock_file)
+{
+  int lock_fd = open(lock_file, O_CREAT | O_EXCL, 0600);
+  if (lock_fd == -1)
+  {
+    perror("lock file");
+    return false;
+  }
+  close(lock_fd);
+  return true;
 }
 
 int main()
@@ -33,7 +74,7 @@ int main()
     return EXIT_FAILURE;
   }
 
-  if (access(LOCK_FILE, F_OK) == 0)
+  if (!create_lock_file(LOCK_FILE))
   {
     fprintf(stderr, "Another instance of the script is running.\n");
     return EXIT_FAILURE;
@@ -43,18 +84,11 @@ int main()
   if (!log_fp)
   {
     perror("fopen");
+    remove(LOCK_FILE);
     return EXIT_FAILURE;
   }
 
-  FILE *lock_fp = fopen(LOCK_FILE, "w");
-  if (!lock_fp)
-  {
-    perror("fopen");
-    fclose(log_fp);
-    return EXIT_FAILURE;
-  }
-
-  bool update_success = 0;
+  bool update_success = false;
   for (size_t i = 0; i < (sizeof(managers) / sizeof(managers[0])); ++i)
   {
     char command[COMMAND_SIZE];
@@ -62,7 +96,7 @@ int main()
 
     if (run_command(command, log_fp))
     {
-      update_success = 1;
+      update_success = true;
       break;
     }
     fprintf(log_fp, "%s update failed. Check the log for details.\n", managers[i]);
@@ -71,8 +105,7 @@ int main()
   fprintf(log_fp, update_success ? "System update completed successfully.\n" : "Update failed. No known package manager found or all updates failed.\n");
 
   fclose(log_fp);
-  fclose(lock_fp);
   remove(LOCK_FILE);
 
-  return EXIT_SUCCESS;
+  return update_success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

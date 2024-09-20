@@ -29,27 +29,26 @@ void parse(long *mem_total, long *mem_used, long *mem_free, long *mem_shared,
     exit(EXIT_FAILURE);
   }
 
-  char key[256];
-  long value;
+  char line[256];
   *mem_total = *mem_free = *mem_shared = *mem_buff_cache = *mem_available = 0;
   *swap_total = *swap_free = 0;
 
-  while (fscanf(fp, "%s %ld kB\n", key, &value) != EOF)
+  while (fgets(line, sizeof(line), fp))
   {
-    if (strcmp(key, "MemTotal:") == 0)
-      *mem_total = value;
-    else if (strcmp(key, "MemFree:") == 0)
-      *mem_free = value;
-    else if (strcmp(key, "MemAvailable:") == 0)
-      *mem_available = value;
-    else if (strcmp(key, "Buffers:") == 0 || strcmp(key, "Cached:") == 0)
-      *mem_buff_cache += value;
-    else if (strcmp(key, "Shmem:") == 0)
-      *mem_shared = value;
-    else if (strcmp(key, "SwapTotal:") == 0)
-      *swap_total = value;
-    else if (strcmp(key, "SwapFree:") == 0)
-      *swap_free = value;
+    if (strncmp(line, "MemTotal:", 9) == 0)
+      sscanf(line + 9, "%ld", mem_total);
+    else if (strncmp(line, "MemFree:", 8) == 0)
+      sscanf(line + 8, "%ld", mem_free);
+    else if (strncmp(line, "MemAvailable:", 13) == 0)
+      sscanf(line + 13, "%ld", mem_available);
+    else if (strncmp(line, "Buffers:", 8) == 0 || strncmp(line, "Cached:", 7) == 0)
+      sscanf(line + (line[0] == 'B' ? 8 : 7), "%ld", mem_buff_cache);
+    else if (strncmp(line, "Shmem:", 6) == 0)
+      sscanf(line + 6, "%ld", mem_shared);
+    else if (strncmp(line, "SwapTotal:", 10) == 0)
+      sscanf(line + 10, "%ld", swap_total);
+    else if (strncmp(line, "SwapFree:", 9) == 0)
+      sscanf(line + 9, "%ld", swap_free);
   }
 
   *mem_used = *mem_total - *mem_free - *mem_buff_cache;

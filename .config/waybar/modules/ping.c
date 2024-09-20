@@ -18,6 +18,7 @@ long measure_http_latency(const char *host, int port)
   struct addrinfo hints = {0}, *res;
   struct timeval start, end, timeout;
   long latency_ms = -1;
+  int connect_status, send_status;
 
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
@@ -26,7 +27,8 @@ long measure_http_latency(const char *host, int port)
   if (getaddrinfo(host, NULL, &hints, &res) != 0)
     return -1;
 
-  if ((sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) < 0)
+  sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+  if (sockfd < 0)
   {
     freeaddrinfo(res);
     return -1;
@@ -36,23 +38,20 @@ long measure_http_latency(const char *host, int port)
 
   timeout.tv_sec = TIMEOUT_MS / 1000;
   timeout.tv_usec = (TIMEOUT_MS % 1000) * 1000;
-
-  if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0)
-  {
-    close(sockfd);
-    freeaddrinfo(res);
-    return -1;
-  }
+  setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
   gettimeofday(&start, NULL);
-  if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0)
+
+  connect_status = connect(sockfd, res->ai_addr, res->ai_addrlen);
+  if (connect_status < 0)
   {
     close(sockfd);
     freeaddrinfo(res);
     return -1;
   }
 
-  if (send(sockfd, REQUEST, strlen(REQUEST), 0) < 0)
+  send_status = send(sockfd, REQUEST, strlen(REQUEST), 0);
+  if (send_status < 0)
   {
     close(sockfd);
     freeaddrinfo(res);
