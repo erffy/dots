@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Default values
-OUTPUT_DIR="$HOME/Videos"
+OUTPUT_DIR="${HOME}/Videos"
 FILENAME="recording_$(date +'%Y-%m-%d_%H-%M-%S').mkv"
 AUDIO_INPUT="default"  # Set to "none" for no audio
 SCREEN_AREA="full"     # Options: "full", "region", or "window"
@@ -45,28 +45,34 @@ done
 if [[ -z $OUTPUT ]]; then
   echo "Available outputs:"
   swaymsg -t get_outputs | jq -r '.[] | "\(.name) - \(.make) \(.model) \(.scale)x scale, \(.rect.width)x\(.rect.height) resolution"'
-  read -p "Select an output to record (leave blank for default): " OUTPUT
+  read -rp "Select an output to record (leave blank for default): " OUTPUT
+fi
+
+# Validate selected output
+if [[ -n $OUTPUT && ! $(swaymsg -t get_outputs | jq -r ".[] | select(.name == \"$OUTPUT\") | .name") ]]; then
+  echo "Error: Invalid output specified." >&2
+  exit 1
 fi
 
 # Build wf-recorder command
-CMD="wf-recorder -f \"$OUTPUT_DIR/$FILENAME\" -c h264_vaapi -p \"$FPS\" --codec-options bitrate=$BITRATE"
+CMD=(wf-recorder -f $OUTPUT_DIR/$FILENAME -c h264_vaapi -p $FPS --codec-options bitrate="$BITRATE")
 
 # Add screen area options
 case $SCREEN_AREA in
-  region) CMD+=" --geometry $(slurp)" ;;
-  window) CMD+=" --output $(swaymsg -t get_tree | jq -r '.. | select(.focused? == true).rect | "\(.x),\(.y) \(.width)x\(.height)"')" ;;
-  full) [[ -n $OUTPUT ]] && CMD+=" --output \"$OUTPUT\"" ;;
+  region) CMD+=(--geometry "$(slurp)") ;;
+  window) CMD+=(--output "$(swaymsg -t get_tree | jq -r '.. | select(.focused? == true).rect | "\(.x),\(.y) \(.width)x\(.height)"')")" ;;
+  full) [[ -n $OUTPUT ]] && CMD+=(--output "$OUTPUT") ;;
 esac
 
 # Add audio input if not "none"
-[[ $AUDIO_INPUT != "none" ]] && CMD+=" -a \"$AUDIO_INPUT\""
+[[ $AUDIO_INPUT != "none" ]] && CMD+=(-a "$AUDIO_INPUT")
 
 # Add duration if provided
-[[ -n $DURATION ]] && CMD+=" --max-duration \"$DURATION\""
+[[ -n $DURATION ]] && CMD+=(--max-duration "$DURATION")
 
 # Notify and start recording
 notify-send "Recording started" "Output: $OUTPUT_DIR/$FILENAME"
-bash -c $CMD
+"${CMD[@]}"
 notify-send "Recording stopped" "Saved to $OUTPUT_DIR/$FILENAME"
 
 echo "Recording saved to $OUTPUT_DIR/$FILENAME"

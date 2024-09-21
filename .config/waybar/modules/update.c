@@ -34,17 +34,23 @@ bool run_command(const char *command, FILE *log_fp)
     dup2(pipe_fd[1], STDERR_FILENO);
     close(pipe_fd[1]);
 
-    char *const argv[] = {"/usr/bin/env sh", "-c", (char *)command, NULL};
-    execvp("/usr/bin/env sh", argv);
+    char *const argv[] = {"/usr/bin/bash", "-c", (char *)command, NULL};
+    execvp("/usr/bin/bash", argv);
     _exit(EXIT_FAILURE);
   }
   else
   {
     close(pipe_fd[1]);
-    char buffer[COMMAND_SIZE];
 
-    while (read(pipe_fd[0], buffer, sizeof(buffer) - 1) > 0)
+    char buffer[COMMAND_SIZE];
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0)
+    {
+      buffer[bytes_read] = '\0';
       fputs(buffer, log_fp);
+      fflush(log_fp);
+    }
 
     close(pipe_fd[0]);
 

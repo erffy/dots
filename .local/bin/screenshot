@@ -5,29 +5,27 @@ showEditor="yes"
 TARGET="$HOME/Pictures"
 DATE=$(date +%Y%m%d_%H%M%S)
 
-# Take screenshot for each output
+outputs=$(swaymsg -t get_outputs | jq -r '.[].name')
+
 takeScreenshot() {
   [[ -n $1 ]] && sleep "$1"
-  swaymsg -t get_outputs | jq -r ".[].name" | while read -r output; do
-    local tmp_file="/tmp/$output.png"
+
+  for output in $outputs; do
+    tmp_file="/tmp/$output.png"
     rm -f "$tmp_file"
+
     grim -l 1 ${cursor:+-c} -o "$output" "$tmp_file"
-    swaymsg for_window "[title=\"imv(.*)$output.png\"]" move to output "$output"
-    swaymsg for_window "[title=\"imv(.*)$output.png\"]" fullscreen true
-    imv-wayland "$tmp_file" &
+
+    wait $!
+
+    if ! pgrep -f "imv-wayland.*$tmp_file" >/dev/null; then
+      imv-wayland "$tmp_file" &
+      swaymsg [title="imv(.*)$output.png"] fullscreen true &
+    fi
   done
+  wait
 }
 
-# Merge all screenshots into one
-mergePhotos() {
-  local files
-  files=$(swaymsg -t get_outputs | jq -r ".[].name" | xargs -I{} echo /tmp/{}.png)
-  pushd /tmp >/dev/null || exit
-  magick +append $files ss.png
-  popd >/dev/null || exit
-}
-
-# Process screenshots based on mode
 processScreenshot() {
   local mode=$1 timeout=$3 tempfile
   tempfile=$(mktemp)
@@ -35,29 +33,31 @@ processScreenshot() {
   [[ -n $timeout ]] && sleep "$timeout"
 
   case $mode in
-    Rectangular)
-      takeScreenshot "$timeout"
-      grim -g "$(slurp)" - > "$tempfile"
+  Rectangular)
+    local region
+    region=$(slurp -d 0)
+    if [[ -n $region ]]; then
+      grim -g "$region" - >"$tempfile"
       killall imv-wayland
-      cat "$tempfile" | swappy -f - | wl-copy
-      ;;
-    Full)
-      takeScreenshot "$timeout"
-      killall imv-wayland
-      local focused
-      focused=$(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name')
-      cat "/tmp/$focused.png" | swappy -f - | wl-copy
-      ;;
-    Active)
-      grim -g "$(swaymsg -t get_tree | jq -r '.. | select(.focused?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"')" - > "$tempfile"
-      cat "$tempfile" | swappy -f - | wl-copy
-      ;;
+      swappy -f "$tempfile" | wl-copy
+    fi
+    ;;
+  Full)
+    takeScreenshot "$timeout"
+    killall imv-wayland
+    local focused
+    focused=$(echo "$outputs" | swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name')
+    swappy -f "/tmp/$focused.png" | wl-copy
+    ;;
+  Active)
+    grim -g "$(swaymsg -t get_tree | jq -r '.. | select(.focused?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"')" - >"$tempfile"
+    swappy -f "$tempfile" | wl-copy
+    ;;
   esac
 
   rm $tempfile
 }
 
-# Main function handling modes
 main() {
   local mode=$1 action=$2 timeout=$3 saved_file="$TARGET/${DATE}"
 
@@ -66,31 +66,30 @@ main() {
   if [[ "$action" == "2" || "$action" == "4" ]]; then
     local output_file="${saved_file}-edited.png"
     case $mode in
-      Rectangular) grim -g "$(slurp)" - > "${saved_file}.png" ;;
-      Full) cat "/tmp/$(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name').png" > "${saved_file}.png" ;;
-      Active) grim -g "$(swaymsg -t get_tree | jq -r '.. | select(.focused?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"')" - > "${saved_file}.png" ;;
+    Rectangular) grim -g "$(slurp -d 0)" - >"${saved_file}.png" ;;
+    Full) swappy -f "/tmp/$(echo "$outputs" | swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name').png" >"${saved_file}.png" ;;
+    Active) grim -g "$(swaymsg -t get_tree | jq -r '.. | select(.focused?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"')" - >"${saved_file}.png" ;;
     esac
-    cat "${saved_file}.png" | swappy -f - -o "$output_file"
+    swappy -f "${saved_file}.png" -o "$output_file"
   fi
 }
- 
-# Handle command-line arguments
+
 case $1 in
-  -r | --rec) main Rectangular 1 ;;
-  -f | --full) main Full 2 ;;
-  -a | --active) main Active 1 ;;
-  *)
-    mode1=$(swaynag -t wpgtheme -m Screenshot -Z Full 'echo Full' -Z Rectangular 'echo Rectangular')
-    [[ -z $mode1 ]] && exit
+-r | --rec) main Rectangular 1 ;;
+-f | --full) main Full 2 ;;
+-a | --active) main Active 1 ;;
+*)
+  mode1=$(swaynag -t wpgtheme -m Screenshot -Z Full 'echo Full' -Z Rectangular 'echo Rectangular')
+  [[ -z $mode1 ]] && exit
 
-    mode2=$(swaynag -t wpgtheme -m "$mode1 Screenshot" -Z 'Copy' 'echo 1' -Z 'Save' 'echo 2' -Z 'Timeout and Copy' 'echo 3' -Z 'Timeout and Save' 'echo 4')
-    [[ -z $mode2 ]] && exit
+  mode2=$(swaynag -t wpgtheme -m "$mode1 Screenshot" -Z 'Copy' 'echo 1' -Z 'Save' 'echo 2' -Z 'Timeout and Copy' 'echo 3' -Z 'Timeout and Save' 'echo 4')
+  [[ -z $mode2 ]] && exit
 
-    if [[ "$mode2" == "3" || "$mode2" == "4" ]]; then
-      timeout=$(swaynag -t wpgtheme -m Timeout -Z 2 'echo 2' -Z 3 'echo 3' -Z 5 'echo 5' -Z 10 'echo 10' -Z 15 'echo 15' -Z 30 'echo 30')
-      [[ -z $timeout ]] && exit
-    fi
+  if [[ "$mode2" == "3" || "$mode2" == "4" ]]; then
+    timeout=$(swaynag -t wpgtheme -m Timeout -Z 2 'echo 2' -Z 3 'echo 3' -Z 5 'echo 5' -Z 10 'echo 10' -Z 15 'echo 15' -Z 30 'echo 30')
+    [[ -z $timeout ]] && exit
+  fi
 
-    main "$mode1" "$mode2" "$timeout"
-    ;;
+  main "$mode1" "$mode2" "$timeout"
+  ;;
 esac

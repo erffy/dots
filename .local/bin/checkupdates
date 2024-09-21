@@ -32,9 +32,9 @@ DBPath="$(pacman-conf DBPath || echo /var/lib/pacman)"
 
 trap 'rm -f "$CHECKUPDATES_DB/db.lck"' EXIT
 
-mkdir -p $CHECKUPDATES_DB || die 'Failed to create temporary database directory'
-ln -sf $DBPath/local $CHECKUPDATES_DB || die 'Failed to link pacman database'
+mkdir -p "$CHECKUPDATES_DB"
 
-fakeroot pacman -Sy --dbpath $CHECKUPDATES_DB --logfile /dev/null &>/dev/null || die 'Failed to update package database'
+[ -L "$CHECKUPDATES_DB/local" ] || ln -s "$DBPath/local" "$CHECKUPDATES_DB" || die 'Failed to link pacman database'
 
-pacman -Qu --dbpath $CHECKUPDATES_DB 2>/dev/null | grep -v '\[.*\]' || exit 2
+fakeroot pacman -Sy --dbpath "$CHECKUPDATES_DB" --logfile /dev/null &>/dev/null || die 'Failed to update package database'
+pacman -Qu --dbpath "$CHECKUPDATES_DB" 2>/dev/null | grep -v '\[.*\]' || exit 2

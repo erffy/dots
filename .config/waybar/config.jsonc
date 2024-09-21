@@ -105,6 +105,7 @@
     "interval": 120,
     "exec": "~/.config/waybar/modules/checkupdates",
     "on-click-right": "pkexec ~/.config/waybar/modules/update",
+    "on-click-middle": "pkexec ~/.local/bin/fetchmirrors",
     "return-type": "json"
   },
   "custom/memory": {
