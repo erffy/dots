@@ -4,7 +4,7 @@
 ### Installation
 ```sh
 # clone repository
-git clone https://github.com/erffy/dotfiles.git
+git clone https://github.com/erffy/dots.git
 # install required packages (requires root)
 pacman -S --needed $(cat dotfiles/packages)
 # copy repository contents to HOME
