@@ -78,15 +78,15 @@
       "ethernet": "",
       "linked": ""
     },
-    "tooltip-format": "Gateway: {gwaddr}\nIP: {ipaddr}\nIF: {ifname}\n  {bandwidthUpBytes} ・   {bandwidthDownBytes}",
-    "tooltip-format-wifi": "SSID: {essid}\nGateway: {gwaddr}\nIP: {ipaddr}\nIF: {ifname}\nFrequency: {frequency}GHz\nStrength: {signalStrength}% ({signaldBm}dBm)\n  {bandwidthUpBytes} ・   {bandwidthDownBytes}",
+    "tooltip-format": "Gateway ・ {gwaddr}\nIP ・ {ipaddr}\nIF ・ {ifname}\n  {bandwidthDownBytes} ・   {bandwidthUpBytes}",
+    "tooltip-format-wifi": "SSID ・ {essid}\nGateway ・ {gwaddr}\nIP ・ {ipaddr}\nIF ・ {ifname}\nFrequency ・ {frequency}GHz\nStrength ・ {signalStrength}% ({signaldBm}dBm)\n  {bandwidthDownBytes} ・   {bandwidthUpBytes}",
     "min-length": 10,
     "max-length": 20
   },
   "mpris": {
     "format": "{status_icon}  {title}",
     "format-stopped": "",
-    "tooltip-format": "Player: {player}\nTitle: {title}\nArtist: {artist}\nAlbum: {album}\nPosition: {position} ・ {length} ({status})",
+    "tooltip-format": "Player ・ {player}\nTitle ・ {title}\nArtist ・ {artist}\nAlbum ・ {album}\n{position} ・ {length} ({status})",
     "status-icons": {
       "paused": "",
       "playing": ""

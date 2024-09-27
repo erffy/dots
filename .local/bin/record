@@ -60,7 +60,7 @@ CMD=(wf-recorder -f $OUTPUT_DIR/$FILENAME -c h264_vaapi -p $FPS --codec-options 
 # Add screen area options
 case $SCREEN_AREA in
   region) CMD+=(--geometry "$(slurp)") ;;
-  window) CMD+=(--output "$(swaymsg -t get_tree | jq -r '.. | select(.focused? == true).rect | "\(.x),\(.y) \(.width)x\(.height)"')")" ;;
+  window) CMD+=(--output "$(swaymsg -t get_tree | jq -r '.. | select(.focused? == true).rect | "\(.x),\(.y) \(.width)x\(.height)"')") ;;
   full) [[ -n $OUTPUT ]] && CMD+=(--output "$OUTPUT") ;;
 esac
 

@@ -18,7 +18,7 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-set -e
+set -euo pipefail
 
 die() {
   echo "Error: $1" >&2
@@ -27,14 +27,18 @@ die() {
 
 command -v fakeroot >/dev/null || die 'Cannot find fakeroot binary'
 
-CHECKUPDATES_DB="${CHECKUPDATES_DB:-${TMPDIR:-/tmp}/checkup-db-${UID}}"
-DBPath="$(pacman-conf DBPath || echo /var/lib/pacman)"
+PMS=("yay" "paru" "pacman")
+for PM in "${PMS[@]}"; do
+  command -v $PM >/dev/null && break || PM=""
+done
+: "${PM:?No supported package manager found}"
 
+CHECKUPDATES_DB="${CHECKUPDATES_DB:-${TMPDIR:-/tmp}/checkup-db-${UID}}"
+DBPath=$(pacman-conf DBPath || echo "/var/lib/pacman")
 trap 'rm -f "$CHECKUPDATES_DB/db.lck"' EXIT
 
-mkdir -p "$CHECKUPDATES_DB"
+mkdir -p $CHECKUPDATES_DB
+[ -L "$CHECKUPDATES_DB/local" ] || ln -s $DBPath/local $CHECKUPDATES_DB/local
 
-[ -L "$CHECKUPDATES_DB/local" ] || ln -s "$DBPath/local" "$CHECKUPDATES_DB" || die 'Failed to link pacman database'
-
-fakeroot pacman -Sy --dbpath "$CHECKUPDATES_DB" --logfile /dev/null &>/dev/null || die 'Failed to update package database'
-pacman -Qu --dbpath "$CHECKUPDATES_DB" 2>/dev/null | grep -v '\[.*\]' || exit 2
+fakeroot $PM -Sy --dbpath $CHECKUPDATES_DB --logfile /dev/null &>/dev/null
+$PM -Qu --dbpath $CHECKUPDATES_DB 2>/dev/null | grep -v '\[.*\]'

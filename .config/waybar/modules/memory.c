@@ -8,6 +8,8 @@
 
 void format(long size, char *output)
 {
+  size = size * KILO;
+
   if (size >= GIGA)
     snprintf(output, 16, "%.2fG", (double)size / GIGA);
   else if (size >= MEGA)
@@ -69,19 +71,19 @@ int main()
   char mem_cache_str[16], mem_available_str[16], swap_usage_str[16];
   char swap_total_str[16], swap_free_str[16], total_usage_str[16];
 
-  format(mem_used * KILO, mem_usage_str);
-  format(mem_total * KILO, mem_total_str);
-  format(mem_free * KILO, mem_free_str);
-  format(mem_shared * KILO, mem_shared_str);
-  format(mem_buff_cache * KILO, mem_cache_str);
-  format(mem_available * KILO, mem_available_str);
-  format(swap_used * KILO, swap_usage_str);
-  format(swap_total * KILO, swap_total_str);
-  format(swap_free * KILO, swap_free_str);
+  format(mem_used, mem_usage_str);
+  format(mem_total, mem_total_str);
+  format(mem_free, mem_free_str);
+  format(mem_shared, mem_shared_str);
+  format(mem_buff_cache, mem_cache_str);
+  format(mem_available, mem_available_str);
+  format(swap_used, swap_usage_str);
+  format(swap_total, swap_total_str);
+  format(swap_free, swap_free_str);
 
-  format((mem_used + swap_used) * KILO, total_usage_str);
+  format(mem_used + swap_used, total_usage_str);
 
-  printf("{\"text\":\"  %s\", \"tooltip\":\"Total: %s\\nFree: %s\\nAvailable: %s\\nShared: %s\\nBuffer/Cache: %s\\n\\nSwap Total: %s\\nSwap Free: %s\\nSwap Used: %s\"}",
+  printf("{\"text\":\"  %s\", \"tooltip\":\"Total ・ %s\\nFree ・ %s\\nAvailable ・ %s\\nShared ・ %s\\nBuffer / Cache ・ %s\\n\\nSwap Total ・ %s\\nSwap Free ・ %s\\nSwap Used ・ %s\"}",
          total_usage_str, mem_total_str, mem_free_str, mem_available_str, mem_shared_str,
          mem_cache_str, swap_total_str, swap_free_str, swap_usage_str);
 

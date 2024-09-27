@@ -4,9 +4,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
 #define LOG_FILE "/var/tmp/update.log"
 #define LOCK_FILE "/var/tmp/update.lock"
+#define MIRROR_LOCK_FILE "/var/tmp/mirror.lock"
 #define COMMAND_SIZE 256
 
 const char *managers[] = {"yay", "paru", "pacman"};
@@ -83,6 +85,13 @@ int main()
   if (!create_lock_file(LOCK_FILE))
   {
     fprintf(stderr, "Another instance of the script is running.\n");
+    return EXIT_FAILURE;
+  }
+
+  struct stat buffer;
+  if (stat(MIRROR_LOCK_FILE, &buffer) == 0)
+  {
+    fprintf(stderr, "Mirror update is in progress. Cannot proceed with updates.\n");
     return EXIT_FAILURE;
   }
 
