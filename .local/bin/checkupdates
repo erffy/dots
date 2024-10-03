@@ -18,6 +18,10 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+#
+# The checkupdates module in Waybar no longer needs this script.
+#
+
 set -euo pipefail
 
 die() {

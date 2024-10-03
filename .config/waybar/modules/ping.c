@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <netdb.h>
+#include <time.h>
+#include <fcntl.h>
 
 #define TARGET "google.com"
 #define PORT 80
@@ -14,35 +16,55 @@
 
 long measure_http_latency(const char *host, int port)
 {
-  int sockfd;
-  struct addrinfo hints = {0}, *res, *res0;
-  struct timeval start, end, timeout;
+  int sockfd, flags;
+  struct addrinfo hints = {0}, *res;
+  struct timespec start, end;
   long latency_ms = -1;
 
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
 
-  if (getaddrinfo(host, NULL, &hints, &res) != 0 || (sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) < 0)
+  if (getaddrinfo(host, NULL, &hints, &res) != 0)
     return -1;
 
-  ((struct sockaddr_in *)res->ai_addr)->sin_port = htons(port);
-  timeout.tv_sec = TIMEOUT_MS / 1000;
-  timeout.tv_usec = (TIMEOUT_MS % 1000) * 1000;
-  setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-
-  gettimeofday(&start, NULL);
-  if (connect(sockfd, res->ai_addr, res->ai_addrlen) < 0 || send(sockfd, REQUEST, strlen(REQUEST), 0) < 0)
+  sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+  if (sockfd < 0)
   {
-    close(sockfd);
     freeaddrinfo(res);
     return -1;
   }
 
-  gettimeofday(&end, NULL);
-  latency_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000;
+  ((struct sockaddr_in *)res->ai_addr)->sin_port = htons(port);
+
+  flags = fcntl(sockfd, F_GETFL, 0);
+  fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+
+  clock_gettime(CLOCK_MONOTONIC, &start);
+
+  connect(sockfd, res->ai_addr, res->ai_addrlen);
+
+  fd_set writefds;
+  struct timeval timeout;
+
+  FD_ZERO(&writefds);
+  FD_SET(sockfd, &writefds);
+
+  timeout.tv_sec = TIMEOUT_MS / 1000;
+  timeout.tv_usec = (TIMEOUT_MS % 1000) * 1000;
+
+  int sel = select(sockfd + 1, NULL, &writefds, NULL, &timeout);
+
+  if (sel > 0 && FD_ISSET(sockfd, &writefds))
+  {
+    if (send(sockfd, REQUEST, strlen(REQUEST), 0) > 0)
+    {
+      clock_gettime(CLOCK_MONOTONIC, &end);
+      latency_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+    }
+  }
 
   close(sockfd);
-  freeaddrinfo(res);
+  freeaddrinfo(res);   
   return latency_ms;
 }
 

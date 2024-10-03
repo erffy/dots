@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 
 #define LOG_FILE "/var/tmp/update.log"
 #define LOCK_FILE "/var/tmp/update.lock"
@@ -36,8 +37,7 @@ bool run_command(const char *command, FILE *log_fp)
     dup2(pipe_fd[1], STDERR_FILENO);
     close(pipe_fd[1]);
 
-    char *const argv[] = {"/usr/bin/bash", "-c", (char *)command, NULL};
-    execvp("/usr/bin/bash", argv);
+    execlp("/usr/bin/bash", "bash", "-c", command, (char *)NULL);
     _exit(EXIT_FAILURE);
   }
   else
@@ -47,11 +47,12 @@ bool run_command(const char *command, FILE *log_fp)
     char buffer[COMMAND_SIZE];
     ssize_t bytes_read;
 
+    setvbuf(log_fp, NULL, _IOLBF, 0);
+
     while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0)
     {
       buffer[bytes_read] = '\0';
       fputs(buffer, log_fp);
-      fflush(log_fp);
     }
 
     close(pipe_fd[0]);
@@ -64,13 +65,17 @@ bool run_command(const char *command, FILE *log_fp)
 
 bool create_lock_file(const char *lock_file)
 {
-  int lock_fd = open(lock_file, O_CREAT | O_EXCL, 0600);
+  int lock_fd = open(lock_file, O_CREAT | O_EXCL | O_RDWR, 0600);
   if (lock_fd == -1)
   {
     perror("lock file");
     return false;
   }
-  close(lock_fd);
+  if (flock(lock_fd, LOCK_EX | LOCK_NB) == -1)
+  {
+    close(lock_fd);
+    return false;
+  }
   return true;
 }
 

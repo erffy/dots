@@ -4,6 +4,9 @@
 !packages
 !.gitignore
 
+!assets
+!assets/**
+
 !.local
 !.local/bin
 !.local/bin/checkupdates

@@ -29,7 +29,7 @@ compile() {
 
   echo -e "${YELLOW}Compiling $src_file...${NC}"
 
-  if gcc -o $output_file $src_file; then
+  if gcc -o "$output_file" "$src_file"; then
     echo -e "${GREEN}$src_file compiled successfully.${NC}"
     log "SUCCESS: $src_file"
   else
@@ -38,25 +38,31 @@ compile() {
   fi
 }
 
-[ -f $LOG_FILE ] && rm $LOG_FILE
+[ -f "$LOG_FILE" ] && rm "$LOG_FILE"
 
 compile_in_parallel() {
   local src_files=("$@")
-  local active_jobs=0
+  local job_count=0
 
   for src_file in "${src_files[@]}"; do
-    ((active_jobs >= MAX_JOBS)) && wait -n
-    compile $src_file &
-    ((active_jobs++))
+    compile "$src_file" &
+    ((job_count++))
+
+    if ((job_count >= MAX_JOBS)); then
+      wait -n
+      ((job_count--))
+    fi
   done
 
   wait
 }
 
-src_files=()
-for src_file in *.c; do
-  [ -e "$src_file" ] && src_files+=("$src_file")
-done
+src_files=(*.c)
+
+if [ "${#src_files[@]}" -eq 0 ]; then
+  echo -e "${RED}No .c files found in the current directory.${NC}"
+  exit 1
+fi
 
 compile_in_parallel "${src_files[@]}"
 

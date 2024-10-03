@@ -10,6 +10,7 @@ fish
 grim
 imv
 kvantum
+noto-fonts
 nwg-look
 pavucontrol
 pcmanfm-qt
@@ -21,6 +22,8 @@ slurp
 sway
 swaybg
 swappy
+ttf-fira-sans
+ttf-fira-code
 ttf-font-awesome
 ttf-jetbrains-mono-nerd
 otf-font-awesome

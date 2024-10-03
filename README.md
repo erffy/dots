@@ -1,3 +1,5 @@
+![](assets/banner.png)
+
 ## Erffy Dotfiles
 - My config files.
 
