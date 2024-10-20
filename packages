@@ -2,9 +2,11 @@ alacritty
 alsa-tools
 ark
 autotiling-rs
+bemoji
 ungoogled-chromium-bin
 copyq
 vscodium
+dolphin
 dunst
 fish
 grim
@@ -13,7 +15,6 @@ kvantum
 noto-fonts
 nwg-look
 pavucontrol
-pcmanfm-qt
 polkit
 polkit-gnome
 qt6ct

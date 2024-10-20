@@ -10,25 +10,29 @@
 #define LOG_FILE "/var/tmp/update.log"
 #define LOCK_FILE "/var/tmp/update.lock"
 #define MIRROR_LOCK_FILE "/var/tmp/mirror.lock"
-#define COMMAND_SIZE 256
+#define BUFFER_SIZE 128
+#define CMD_LEN 128
 
 const char *managers[] = {"yay", "paru", "pacman"};
 
-bool run_command(const char *command, FILE *log_fp)
+static int create_lock_file(const char *lock_file)
+{
+  int lock_fd = open(lock_file, O_CREAT | O_RDWR, 0600);
+  if (lock_fd == -1 || flock(lock_fd, LOCK_EX | LOCK_NB) == -1)
+  {
+    if (lock_fd != -1) close(lock_fd);
+    return -1;
+  }
+  return lock_fd;
+}
+
+static int run_command(const char *cmd, FILE *log_fp)
 {
   int pipe_fd[2];
-  if (pipe(pipe_fd) == -1)
-  {
-    perror("pipe");
-    return false;
-  }
+  if (pipe(pipe_fd) == -1) return -1;
 
   pid_t pid = fork();
-  if (pid == -1)
-  {
-    perror("fork");
-    return false;
-  }
+  if (pid == -1) return -1;
 
   if (pid == 0)
   {
@@ -36,47 +40,23 @@ bool run_command(const char *command, FILE *log_fp)
     dup2(pipe_fd[1], STDOUT_FILENO);
     dup2(pipe_fd[1], STDERR_FILENO);
     close(pipe_fd[1]);
-
-    execlp("/usr/bin/bash", "bash", "-c", command, (char *)NULL);
+    execlp("/bin/bash", "bash", "-c", cmd, NULL);
     _exit(EXIT_FAILURE);
   }
-  else
+
+  close(pipe_fd[1]);
+  char buffer[BUFFER_SIZE];
+  ssize_t bytes;
+  while ((bytes = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0)
   {
-    close(pipe_fd[1]);
-
-    char buffer[COMMAND_SIZE];
-    ssize_t bytes_read;
-
-    setvbuf(log_fp, NULL, _IOLBF, 0);
-
-    while ((bytes_read = read(pipe_fd[0], buffer, sizeof(buffer) - 1)) > 0)
-    {
-      buffer[bytes_read] = '\0';
-      fputs(buffer, log_fp);
-    }
-
-    close(pipe_fd[0]);
-
-    int status;
-    waitpid(pid, &status, 0);
-    return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    buffer[bytes] = '\0';
+    fputs(buffer, log_fp);
   }
-}
+  close(pipe_fd[0]);
 
-bool create_lock_file(const char *lock_file)
-{
-  int lock_fd = open(lock_file, O_CREAT | O_EXCL | O_RDWR, 0600);
-  if (lock_fd == -1)
-  {
-    perror("lock file");
-    return false;
-  }
-  if (flock(lock_fd, LOCK_EX | LOCK_NB) == -1)
-  {
-    close(lock_fd);
-    return false;
-  }
-  return true;
+  int status;
+  waitpid(pid, &status, 0);
+  return WIFEXITED(status) && WEXITSTATUS(status) == 0;
 }
 
 int main()
@@ -87,31 +67,33 @@ int main()
     return EXIT_FAILURE;
   }
 
-  if (!create_lock_file(LOCK_FILE))
+  int lock_fd = create_lock_file(LOCK_FILE);
+  if (lock_fd == -1)
   {
     fprintf(stderr, "Another instance of the script is running.\n");
     return EXIT_FAILURE;
   }
 
-  struct stat buffer;
-  if (stat(MIRROR_LOCK_FILE, &buffer) == 0)
+  struct stat st;
+  if (stat(MIRROR_LOCK_FILE, &st) == 0)
   {
-    fprintf(stderr, "Mirror update is in progress. Cannot proceed with updates.\n");
+    fprintf(stderr, "Mirror update in progress. Cannot proceed with updates.\n");
+    close(lock_fd);
     return EXIT_FAILURE;
   }
 
   FILE *log_fp = fopen(LOG_FILE, "w");
   if (!log_fp)
   {
-    perror("fopen");
-    remove(LOCK_FILE);
+    perror("Failed to open log file");
+    close(lock_fd);
     return EXIT_FAILURE;
   }
 
   bool update_success = false;
-  for (size_t i = 0; i < (sizeof(managers) / sizeof(managers[0])); ++i)
+  for (size_t i = 0; i < sizeof(managers) / sizeof(managers[0]); i++)
   {
-    char command[COMMAND_SIZE];
+    char command[CMD_LEN];
     snprintf(command, sizeof(command), "%s -Syu --noconfirm --noprogressbar --color=never", managers[i]);
 
     if (run_command(command, log_fp))
@@ -119,13 +101,13 @@ int main()
       update_success = true;
       break;
     }
-    fprintf(log_fp, "%s update failed. Check the log for details.\n", managers[i]);
+    fprintf(log_fp, "%s update failed.\n", managers[i]);
   }
 
-  fprintf(log_fp, update_success ? "System update completed successfully.\n" : "Update failed. No known package manager found or all updates failed.\n");
+  fprintf(log_fp, update_success ? "System update completed successfully.\n" : "Update failed for all package managers.\n");
 
   fclose(log_fp);
-  remove(LOCK_FILE);
+  close(lock_fd);
 
   return update_success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

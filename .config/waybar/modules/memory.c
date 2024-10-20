@@ -7,7 +7,7 @@
 
 static inline void format(long size, char *output)
 {
-  size = size * KILO;
+  size *= KILO;
 
   if (size >= GIGA)
     snprintf(output, 16, "%.2fG", (double)size / GIGA);
@@ -84,8 +84,10 @@ int main()
 
   format(mem_used + swap_used, total_usage_str);
 
-  printf("{\"text\":\"  %s\", \"tooltip\":\"Total ・ %s\\nUsed ・ %s\\nFree ・ %s\\nAvailable ・ %s\\nShared ・ %s\\nBuffer / Cache ・ %s\\n\\nSwap Total ・ %s\\nSwap Free ・ %s\\nSwap Used ・ %s\"}",
-         total_usage_str, mem_total_str, mem_usage_str, mem_free_str, mem_available_str, mem_shared_str,
+  double total_percentage = (double)(mem_used + swap_used) / (mem_total + swap_total) * 100;
+
+  printf("{\"text\":\"  %s ・ %.0f%%\", \"tooltip\":\"Total ・ %s\\nUsed ・ %s\\nFree ・ %s\\nAvailable ・ %s\\nShared ・ %s\\nBuffer / Cache ・ %s\\n\\nSwap Total ・ %s\\nSwap Free ・ %s\\nSwap Used ・ %s\"}",
+         total_usage_str, total_percentage, mem_total_str, mem_usage_str, mem_free_str, mem_available_str, mem_shared_str,
          mem_cache_str, swap_total_str, swap_free_str, swap_usage_str);
 
   return 0;

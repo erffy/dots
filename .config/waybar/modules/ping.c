@@ -1,80 +1,91 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include <netdb.h>
-#include <time.h>
-#include <fcntl.h>
+#include <sys/socket.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <errno.h>
 
-#define TARGET "google.com"
-#define PORT 80
-#define REQUEST "HEAD / HTTP/1.1\r\nHost: " TARGET "\r\nConnection: close\r\n\r\n"
+#define TARGET "8.8.8.8"
+#define PACKET_SIZE 64
 #define TIMEOUT_MS 5000
 
-long measure_http_latency(const char *host, int port)
+unsigned short checksum(void *b, int len)
 {
-  int sockfd, flags;
-  struct addrinfo hints = {0}, *res;
-  struct timespec start, end;
-  long latency_ms = -1;
+    unsigned short *buf = b;
+    unsigned int sum = 0;
 
-  hints.ai_family = AF_INET;
-  hints.ai_socktype = SOCK_STREAM;
-
-  if (getaddrinfo(host, NULL, &hints, &res) != 0)
-    return -1;
-
-  sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-  if (sockfd < 0)
-  {
-    freeaddrinfo(res);
-    return -1;
-  }
-
-  ((struct sockaddr_in *)res->ai_addr)->sin_port = htons(port);
-
-  flags = fcntl(sockfd, F_GETFL, 0);
-  fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
-
-  clock_gettime(CLOCK_MONOTONIC, &start);
-
-  connect(sockfd, res->ai_addr, res->ai_addrlen);
-
-  fd_set writefds;
-  struct timeval timeout;
-
-  FD_ZERO(&writefds);
-  FD_SET(sockfd, &writefds);
-
-  timeout.tv_sec = TIMEOUT_MS / 1000;
-  timeout.tv_usec = (TIMEOUT_MS % 1000) * 1000;
-
-  int sel = select(sockfd + 1, NULL, &writefds, NULL, &timeout);
-
-  if (sel > 0 && FD_ISSET(sockfd, &writefds))
-  {
-    if (send(sockfd, REQUEST, strlen(REQUEST), 0) > 0)
+    while (len > 1)
     {
-      clock_gettime(CLOCK_MONOTONIC, &end);
-      latency_ms = (end.tv_sec - start.tv_sec) * 1000 + (end.tv_nsec - start.tv_nsec) / 1000000;
+        sum += *buf++;
+        len -= 2;
     }
-  }
+    if (len == 1)
+        sum += *(unsigned char *)buf;
 
-  close(sockfd);
-  freeaddrinfo(res);   
-  return latency_ms;
+    sum = (sum >> 16) + (sum & 0xFFFF);
+    sum += (sum >> 16);
+    return ~sum;
+}
+
+long get_time_ms()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000 + tv.tv_usec / 1000;
+}
+
+long ping(const char *ip_address)
+{
+    int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+    if (sockfd < 0)
+        return -1;
+
+    struct sockaddr_in addr = {0};
+    addr.sin_family = AF_INET;
+    if (inet_pton(AF_INET, ip_address, &addr.sin_addr) <= 0)
+        return -1;
+
+    struct timeval timeout = {TIMEOUT_MS / 1000, (TIMEOUT_MS % 1000) * 1000};
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
+    unsigned char packet[PACKET_SIZE] = {0};
+    struct icmphdr icmp_hdr = {ICMP_ECHO, 0, checksum(&icmp_hdr, sizeof(icmp_hdr))};
+    memcpy(packet, &icmp_hdr, sizeof(icmp_hdr));
+
+    long start_time = get_time_ms();
+    if (sendto(sockfd, packet, sizeof(packet), 0, (struct sockaddr *)&addr, sizeof(addr)) <= 0)
+        return -1;
+
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(sockfd, &readfds);
+
+    if (select(sockfd + 1, &readfds, NULL, NULL, &timeout) > 0)
+    {
+        int recv_len = recvfrom(sockfd, packet, sizeof(packet), 0, NULL, NULL);
+        if (recv_len > 0)
+        {
+            struct icmphdr *reply_hdr = (struct icmphdr *)(packet + sizeof(struct iphdr));
+            if (reply_hdr->type == ICMP_ECHOREPLY)
+                return get_time_ms() - start_time;
+        }
+    }
+
+    close(sockfd);
+    return -1;
 }
 
 int main()
 {
-  long latency_ms = measure_http_latency(TARGET, PORT);
-  if (latency_ms >= 0 && latency_ms <= TIMEOUT_MS)
-    printf("{\"text\":\"   %ldms\", \"tooltip\":\"Target: %s\"}", latency_ms, TARGET);
-  else
-    printf("{\"text\":\"\", \"tooltip\":\"\",\"class\":\"hidden\"}");
+    long latency_ms = ping(TARGET);
+    if (latency_ms < 0 || latency_ms > TIMEOUT_MS)
+        printf("{\"text\":\"\", \"tooltip\":\"\", \"class\":\"hidden\"}\n");
+    else
+        printf("{\"text\":\"   %ldms\", \"tooltip\":\"Target: %s\"}\n", latency_ms, TARGET);
 
-  return 0;
+    return 0;
 }

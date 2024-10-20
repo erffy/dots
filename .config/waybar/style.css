@@ -1,7 +1,7 @@
 @import 'themes/catppuccin.css';
 
 * {
-  font-family: 'JetBrainsMono Nerd Font', 'Font Awesome 6';
+  font-family: 'JetBrains Mono Nerd Font', 'Font Awesome 6';
   font-weight: 900;
   font-size: 9px;
   border: 0;
@@ -9,13 +9,17 @@
 
 #waybar {
   border-radius: 80px;
-  background: @surface0;
+  background: @mantle;
+  padding: 5px;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 tooltip {
   color: @text;
-  background-color: @surface0;
+  background-color: @mantle;
   border-radius: 10px;
+  padding: 5px;
+  box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
 }
 
 #workspaces button {
@@ -26,15 +30,17 @@ tooltip {
   padding-left: 5px;
   padding-right: 5px;
   background: transparent;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #workspaces button:hover {
-  color: @lavender;
+  color: @sapphire;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 #workspaces button.active,
 #workspaces button.focused {
-  color: @rosewater;
+  color: @pink;
   opacity: 1;
 }
 
@@ -42,6 +48,7 @@ tooltip {
   opacity: 1;
   color: @red;
   background-color: @yellow;
+  border-radius: 5px;
 }
 
 #cpu,
@@ -55,25 +62,28 @@ tooltip {
 #wireplumber,
 #network,
 #tray {
-  padding-left: 10px;
   padding-right: 10px;
+  padding-left: 10px;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 #clock {
-  color: @blue;
+  margin-right: 5px;
+  color: @rosewater;
 }
 
 #memory,
 #custom-memory {
-  color: @maroon;
+  color: @teal;
 }
 
 #cpu {
-  color: @peach;
+  margin-left: 5px;
+  color: @maroon;
 }
 
 #network {
-  color: @yellow;
+  color: @lavender;
 }
 
 #battery,
@@ -82,22 +92,22 @@ tooltip {
 }
 
 #battery.warning:not(.charging) {
-  color: @red;
+  color: @yellow;
 }
 
 #wireplumber {
-  color: @teal;
+  color: @peach;
 }
 
 #custom-media,
 #mpris {
-  color: @sapphire;
+  color: @sky;
 }
 
 #custom-ping {
-  color: @mauve;
+  color: @flamingo;
 }
 
 #custom-updates {
-  color: @pink;
+  color: @mauve;
 }
