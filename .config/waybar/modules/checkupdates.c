@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 4096
 #define MAX_VERSION_LENGTH 20
 
 typedef struct
@@ -50,27 +50,7 @@ int compare_updates(const void *a, const void *b)
 
 int main()
 {
-  const char *pms[] = {"/usr/bin/yay", "/usr/bin/paru", "/usr/bin/pacman"};
-  const char *pm = NULL;
-
-  for (int i = 0; i < 3 && !pm; ++i)
-    (access(pms[i], X_OK) == 0) ? pm = pms[i] : 0;
-
-  if (!pm)
-    die("No supported package manager found");
-
-  char checkup_db[BUFFER_SIZE];
-  snprintf(checkup_db, sizeof(checkup_db), "/tmp/checkup-db-%d", getuid());
-
-  if (mkdir(checkup_db, 0755) != 0 && errno != EEXIST)
-    die("Failed to create temporary directory");
-  if (symlink("/var/lib/pacman/local", checkup_db) != 0 && errno != EEXIST)
-    die("Failed to create symlink");
-
-  char cmd[BUFFER_SIZE];
-  snprintf(cmd, sizeof(cmd), "fakeroot %s -Sy --dbpath %s --logfile /dev/null &>/dev/null && %s -Qu --dbpath %s 2>/dev/null", pm, checkup_db, pm, checkup_db);
-
-  FILE *fp = popen(cmd, "r");
+  FILE *fp = popen("/usr/bin/checkupdates --nocolor", "r"); // Check 'pacman-contrib' and 'fakeroot' is installed on your system.
   if (!fp)
     die("popen failed");
 
@@ -80,7 +60,7 @@ int main()
     die("malloc failed");
 
   char line[BUFFER_SIZE];
-  while (fgets(line, sizeof(line), fp))
+  while (fgets(line, sizeof(line), fp) != NULL)
   {
     if (updates_count == updates_capacity)
     {
@@ -109,6 +89,9 @@ int main()
   for (int i = 0; i < updates_count; ++i)
     snprintf(updates_str + strlen(updates_str), sizeof(updates_str) - strlen(updates_str),
              "%-25s %s -> %s\n", updates[i].pkg_name, updates[i].local_version, updates[i].new_version);
+
+  if (updates_count > 0 && updates_str[strlen(updates_str) - 1] == '\n')
+    updates_str[strlen(updates_str) - 1] = '\0';
 
   char pkg_list_escaped[BUFFER_SIZE * 10];
   escape_json(updates_str, pkg_list_escaped, sizeof(pkg_list_escaped));
