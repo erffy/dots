@@ -54,4 +54,10 @@
 !.config/starship
 !.config/starship/**
 
+!.config/fish
+!.config/fish/config.fish
+
+!.config/xdg-desktop-portal
+!.config/xdg-desktop-portal/**
+
 !.config/*-flags.*

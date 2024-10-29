@@ -1,16 +1,26 @@
 ![](assets/banner.png)
 
-## Erffy Dotfiles
-- My config files.
+<br>
+
+![](assets/desktop.png)
 
 ### Installation
+#### 1. Clone repository
 ```sh
-# clone repository
 git clone https://github.com/erffy/dots.git
-# install required packages (requires root)
+```
+
+#### 2. Install required packages (aur-helper recommended, like [yay](https://github.com/Jguer/yay) or [paru](https://github.com/Morganamilo/paru) etc.)
+```sh
 pacman -S --needed $(cat dots/packages)
-# copy repository contents to HOME
+```
+
+#### 3. Copy repository contents
+```sh
 cp -r dots/.* $HOME
-# restart system
+```
+
+#### 4. Restart system
+```sh
 reboot
 ```

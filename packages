@@ -12,6 +12,8 @@ fakeroot
 fish
 grim
 imv
+hyprshot
+hyprpicker
 kvantum
 noto-fonts
 nwg-look
@@ -25,6 +27,8 @@ slurp
 sway
 swaybg
 swappy
+swayidle
+swaylock
 ttf-fira-sans
 ttf-fira-code
 ttf-font-awesome
@@ -36,3 +40,4 @@ wl-clipboard-rs
 wireplumber
 xdg-desktop-portal
 xdg-desktop-portal-wlr
+xdg-desktop-portal-gtk

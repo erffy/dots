@@ -12,7 +12,8 @@
     "custom/ping"
   ],
   "modules-center": [
-    "sway/workspaces"
+    "sway/workspaces",
+    "hyprland/workspaces"
   ],
   "modules-right": [
     "tray",

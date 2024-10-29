@@ -23,13 +23,28 @@ RESET="\033[0m"
 
 command -v rate-mirrors &>/dev/null || _exit 1 "${RED}Error: 'rate-mirrors' is not installed.${RESET}"
 
-touch /var/tmp/mirror.lock
-TOTAL_MIRRORS=${#MIRRORLISTS[@]}
+if [[ -f /var/tmp/mirror.lock ]]; then
+  _exit 1 "${RED}Error: Another instance of this script is running.${RESET}"
+fi
 
+touch /var/tmp/mirror.lock
+
+TOTAL_MIRRORS=${#MIRRORLISTS[@]}
+c=0
+
+echo -e "${YELLOW}Starting mirror list updates...${RESET}"
+sleep 0.5
 for i in "${!MIRRORLISTS[@]}"; do
   echo -ne "[${YELLOW}$((++c))/$TOTAL_MIRRORS${RESET}] ${YELLOW}Updating $i mirrors...${RESET}\033[0K\r"
 
-  rate-mirrors --allow-root --disable-comments-in-file --protocol $PROTOCOL --save="$MIRROR_DIR/${MIRRORLISTS[$i]}" "$i" >/dev/null 2>&1 || _exit 1 "${RED}Error: Failed to update $i mirrors.${RESET}"
+  if rate-mirrors --allow-root --disable-comments-in-file --protocol $PROTOCOL --save="$MIRROR_DIR/${MIRRORLISTS[$i]}" "$i" >/dev/null 2>&1; then
+    echo -e "[${GREEN}$c/$TOTAL_MIRRORS${RESET}] ${GREEN}$i mirrors updated successfully.${RESET}"
+  else
+    echo -e "[${RED}$c/$TOTAL_MIRRORS${RESET}] ${RED}Error: Failed to update $i mirrors.${RESET}"
+    _exit 1 "${RED}Failed to update $i mirrors. Exiting.${RESET}"
+  fi
+
+  sleep 1.5
 done
 
 _exit 0 "${GREEN}All mirror lists updated successfully.${RESET}"

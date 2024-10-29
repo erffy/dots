@@ -8,97 +8,57 @@
     "thread": true,
     "processingTimeout": -1
   },
+  "logo": {
+    "type": "small",
+    "color": {
+      "1": "blue",
+      "2": "blue"
+    }
+  },
   "modules": [
     {
       "type": "os",
       "format": "{2}",
       "key": "    OS",
-      "keyColor": "red"
-    },
-    {
-      "type": "host",
-      "key": "    Host",
-      "keyColor": "red"
+      "keyColor": "blue"
     },
     {
       "type": "kernel",
+      "format": "{2}",
       "key": "    Kernel",
-      "keyColor": "red"
+      "keyColor": "blue"
     },
     {
       "type": "packages",
       "key": "    Packages",
-      "keyColor": "red"
+      "keyColor": "blue"
     },
-    "break",
     {
       "type": "uptime",
       "format": "{2}h, {3}m",
       "key": "    Uptime",
-      "keyColor": "yellow"
+      "keyColor": "blue"
     },
-    {
-      "type": "cpu",
-      "key": "    CPU",
-      "keyColor": "yellow"
-    },
-    {
-      "type": "gpu",
-      "format": "{2}",
-      "key": "    GPU",
-      "keyColor": "yellow"
-    },
-    {
-      "type": "disk",
-      "key": "    Disk",
-      "keyColor": "yellow"
-    },
-    "break",
-    {
-      "type": "monitor",
-      "format": "{1}, {2}x{3} px ({6} inches, {7}ppi)",
-      "key": "    Monitor",
-      "keyColor": "green"
-    },
-    {
-      "type": "opengl",
-      "format": "{4}",
-      "key": "    OpenGL",
-      "keyColor": "green"
-    },
-    {
-      "type": "vulkan",
-      "format": "{2}",
-      "key": "    Vulkan",
-      "keyColor": "green"
-    },
-    "break",
     {
       "type": "wm",
-      "format": "{1}",
       "key": "    WM",
       "keyColor": "blue"
     },
     {
       "type": "de",
+      "format": "{1}",
       "key": "    DE",
       "keyColor": "blue"
     },
     {
-      "type": "lm",
-      "format": "{1}",
-      "key": "    LM",
-      "keyColor": "blue"
-    },
-    {
       "type": "locale",
-      "key": "    Locale",
+      "key": "    Locale",
       "keyColor": "blue"
     },
     {
       "type": "users",
       "format": "{1}",
-      "key": "    Users",
+      "key": "    User",
       "keyColor": "blue"
     }
   ]
