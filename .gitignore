@@ -2,6 +2,7 @@
 
 !README*
 !packages
+!schema_*.json
 !.gitignore
 !.profile
 
@@ -17,6 +18,9 @@
 !.local/bin/record
 !.local/bin/screenshot
 !.local/bin/hyprpicker
+
+!.config/checkupdates.json
+!.config/ping.json
 
 !.config/alacritty
 !.config/alacritty/**
