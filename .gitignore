@@ -64,4 +64,9 @@
 !.config/xdg-desktop-portal
 !.config/xdg-desktop-portal/**
 
+!.config/VSCodium
+!.config/VSCodium/User
+!.config/VSCodium/product.json
+!.config/VSCodium/User/settings.json
+
 !.config/*-flags.*

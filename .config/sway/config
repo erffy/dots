@@ -2,7 +2,7 @@ set $superMod Mod4
 set $altMod Mod1
 
 output * bg $HOME/.config/sway/wallpapers/dark.jpg fill
-seat seat0 xcursor_theme Bibata_Ghost 16
+seat seat0 xcursor_theme Bibata-Modern-Ice 16
 
 bar {
 	swaybar_command waybar

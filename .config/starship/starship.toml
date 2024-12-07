@@ -16,7 +16,7 @@ trim_at = "-"
 
 [directory]
 style = "purple"
-truncate_to_repo = true
+truncate_to_repo = false
 truncation_symbol = "repo: "
 
 [sudo]

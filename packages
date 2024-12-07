@@ -6,7 +6,6 @@ bemoji
 ungoogled-chromium-bin
 copyq
 vscodium
-dolphin
 dunst
 fakeroot
 fish
@@ -29,6 +28,9 @@ swaybg
 swappy
 swayidle
 swaylock
+thunar
+thunar-volman
+thunar-archive-plugin
 ttf-fira-sans
 ttf-fira-code
 ttf-font-awesome
@@ -36,7 +38,7 @@ ttf-jetbrains-mono-nerd
 otf-font-awesome
 waybar
 wlogout
-wl-clipboard-rs
+wl-clipboard
 wireplumber
 xdg-desktop-portal
 xdg-desktop-portal-wlr
