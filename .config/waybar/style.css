@@ -57,6 +57,7 @@ tooltip {
 #mpris,
 #custom-ping,
 #custom-updates,
+#custom-gpu,
 #clock,
 #battery,
 #wireplumber,
@@ -75,6 +76,10 @@ tooltip {
 #memory,
 #custom-memory {
   color: @teal;
+}
+
+#custom-gpu {
+  color: @blue;
 }
 
 #cpu {

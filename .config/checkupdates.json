@@ -1,3 +1,4 @@
 {
-  "$schema": "https://raw.githubusercontent.com/erffy/dots/refs/heads/main/schema_checkupdates.json"
+  "$schema": "https://raw.githubusercontent.com/erffy/dots/refs/heads/main/schema_checkupdates.json",
+  "BUFFER_SIZE": 15
 }

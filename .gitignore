@@ -54,6 +54,7 @@
 
 !.config/waybar
 !.config/waybar/**
+.config/waybar/.*
 
 !.config/starship
 !.config/starship/**

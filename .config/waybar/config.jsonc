@@ -7,13 +7,13 @@
   "margin-top": 7,
   "modules-left": [
     "cpu",
+    "custom/gpu",
     "custom/memory",
     "network",
     "custom/ping"
   ],
   "modules-center": [
-    "sway/workspaces",
-    "hyprland/workspaces"
+    "sway/workspaces"
   ],
   "modules-right": [
     "tray",
@@ -72,7 +72,7 @@
   },
   "network": {
     "interval": 1,
-    "format": "{icon}   {bandwidthTotalBytes}",
+    "format": "{icon}  {bandwidthTotalBytes}",
     "format-disconnected": "",
     "format-icons": {
       "wifi": "",
@@ -105,14 +105,19 @@
   // This module requires 'pacman-contrib' and 'fakeroot' package.
   "custom/updates": {
     "interval": 120,
+    "escape": true,
     "exec": "~/.config/waybar/modules/checkupdates",
-    "on-click-right": "pkexec ~/.config/waybar/modules/update",
-    "on-click-middle": "pkexec ~/.local/bin/fetchmirrors",
+    "on-click-right": "pkexec ~/.local/bin/fetchmirrors",
     "return-type": "json"
   },
   "custom/memory": {
     "interval": 1,
-    "exec": "~/.config/waybar/modules/memory",
+    "exec": "~/.config/waybar/zig-out/bin/memory",
+    "return-type": "json"
+  },
+  "custom/gpu": {
+    "interval": 1,
+    "exec": "~/.config/waybar/zig-out/bin/gpu",
     "return-type": "json"
   }
 }

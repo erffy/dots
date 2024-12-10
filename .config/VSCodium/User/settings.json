@@ -26,7 +26,10 @@
   "extensions.ignoreRecommendations": true,
   "files.autoSave": "afterDelay",
   "files.insertFinalNewline": false,
+  "git.autofetch": true,
+  "git.confirmSync": false,
   "git.decorations.enabled": false,
+  "git.enableSmartCommit": true,
   "remoteHub.commitDirectlyWarning": "off",
   "scm.diffDecorations": "none",
   "terminal.integrated.defaultProfile.linux": "fish",
@@ -44,5 +47,5 @@
   "workbench.startupEditor": "none",
   "workbench.statusBar.visible": false,
   "workbench.tree.renderIndentGuides": "none",
-  "git.enableSmartCommit": true
+  "zig.zls.enabled": "on"
 }
