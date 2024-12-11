@@ -2,15 +2,14 @@ const std = @import("std");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{
-        .preferred_optimize_mode = .ReleaseFast
-    });
+    const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseFast });
 
     const memory = b.addExecutable(.{
         .name = "memory",
         .root_source_file = b.path("src/memory.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
 
     const gpu = b.addExecutable(.{
@@ -18,6 +17,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("src/gpu.zig"),
         .target = target,
         .optimize = optimize,
+        .link_libc = true,
     });
 
     b.installArtifact(memory);

@@ -17,9 +17,9 @@ fn readSysFile(path: []const u8) ![]const u8 {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
 
-    var buffer: [4096]u8 = undefined; // Use fixed-size buffer to avoid resizing issues
+    var buffer: [4096]u8 = undefined;
     const bytes_read = try file.read(&buffer);
-    const content = buffer[0..bytes_read]; // Slice to the actual bytes read
+    const content = buffer[0..bytes_read];
 
     return std.mem.trim(u8, content, " \n");
 }
@@ -121,14 +121,13 @@ pub fn main() !void {
     var free_mem_str: [16]u8 = undefined;
 
     try std.io.getStdOut().writer().print(
-        "{{\"text\":\"  {d}% · {s}\",\"tooltip\":\"Memory Total · {s}\\nMemory Used · {s}\\nMemory Free · {s}\\nTemperature · {d:.1}°C\"}}",
+        "{{\"text\":\"  {d}% · {d}°C\",\"tooltip\":\"Memory Total · {s}\\nMemory Used · {s}\\nMemory Free · {s}\"}}",
         .{
             gpu_info.gpu_busy_percent,
-            formatMemory(gpu_info.memory_used, &used_mem_str),
+            gpu_info.temperature,
             formatMemory(gpu_info.memory_total, &total_mem_str),
             formatMemory(gpu_info.memory_used, &used_mem_str),
             formatMemory(gpu_info.memory_free, &free_mem_str),
-            gpu_info.temperature
         },
     );
 }

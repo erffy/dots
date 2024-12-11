@@ -2,8 +2,8 @@
   "layer": "top",
   "position": "top",
   "reload_style_on_change": true,
-  "margin-right": 10,
-  "margin-left": 10,
+  "margin-right": 15,
+  "margin-left": 15,
   "margin-top": 7,
   "modules-left": [
     "cpu",
@@ -24,8 +24,8 @@
     "clock"
   ],
   "tray": {
-    "icon-size": 15,
-    "spacing": 5
+    "icon-size": 16,
+    "spacing": 6
   },
   "clock": {
     "format": "  {:%I:%M %p ・   %m/%d/%y}",
@@ -102,7 +102,6 @@
     "min-length": 10,
     "max-length": 35
   },
-  // This module requires 'pacman-contrib' and 'fakeroot' package.
   "custom/updates": {
     "interval": 120,
     "escape": true,

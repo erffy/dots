@@ -1,5 +1,6 @@
 @import 'themes/catppuccin.css';
 
+/* General Styling */
 * {
   font-family: 'JetBrains Mono Nerd Font', 'Font Awesome 6';
   font-weight: 900;
@@ -9,19 +10,21 @@
 
 #waybar {
   border-radius: 80px;
-  background: @mantle;
+  background: rgba(0, 0, 0, 0.5);
   padding: 5px;
   box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
 }
 
+/* Tooltip Styling */
 tooltip {
   color: @text;
-  background-color: @mantle;
+  background: rgba(0, 0, 0, 0.85);
   border-radius: 10px;
   padding: 5px;
-  box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
 }
 
+/* Workspace Styling */
 #workspaces button {
   color: @flamingo;
   opacity: 0.5;
@@ -51,6 +54,7 @@ tooltip {
   border-radius: 5px;
 }
 
+/* Module Styling */
 #cpu,
 #memory,
 #custom-memory,
@@ -65,32 +69,36 @@ tooltip {
 #tray {
   padding-right: 10px;
   padding-left: 10px;
-  background-color: rgba(0, 0, 0, 0.05);
 }
 
+/* Clock */
 #clock {
   margin-right: 5px;
   color: @rosewater;
 }
 
+/* Memory */
 #memory,
 #custom-memory {
   color: @teal;
 }
 
+/* GPU */
 #custom-gpu {
   color: @blue;
 }
 
+/* CPU */
 #cpu {
-  margin-left: 5px;
   color: @maroon;
 }
 
+/* Network */
 #network {
   color: @lavender;
 }
 
+/* Battery */
 #battery,
 #battery.charging {
   color: @green;
@@ -100,19 +108,23 @@ tooltip {
   color: @yellow;
 }
 
+/* Wireplumber */
 #wireplumber {
   color: @peach;
 }
 
+/* Media */
 #custom-media,
 #mpris {
   color: @sky;
 }
 
+/* Ping */
 #custom-ping {
   color: @flamingo;
 }
 
+/* Updates */
 #custom-updates {
   color: @mauve;
 }
