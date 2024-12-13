@@ -11,9 +11,20 @@ const MemoryInfo = struct {
     mem_shared: u64 = 0,
     mem_buff_cache: u64 = 0,
     mem_available: u64 = 0,
+
     swap_total: u64 = 0,
     swap_used: u64 = 0,
     swap_free: u64 = 0,
+
+    active: u64 = 0,
+    inactive: u64 = 0,
+    anon_pages: u64 = 0,
+    mapped: u64 = 0,
+    dirty: u64 = 0,
+    writeback: u64 = 0,
+    kernel_stack: u64 = 0,
+    page_tables: u64 = 0,
+    slab: u64 = 0,
 };
 
 fn format(size: u64, output: []u8) []const u8 {
@@ -59,6 +70,16 @@ fn parse() !MemoryInfo {
         if (parseLine(line, "Shmem:")) |val| result.mem_shared = val;
         if (parseLine(line, "SwapTotal:")) |val| result.swap_total = val;
         if (parseLine(line, "SwapFree:")) |val| result.swap_free = val;
+
+        if (parseLine(line, "Active:")) |val| result.active = val;
+        if (parseLine(line, "Inactive:")) |val| result.inactive = val;
+        if (parseLine(line, "AnonPages:")) |val| result.anon_pages = val;
+        if (parseLine(line, "Mapped:")) |val| result.mapped = val;
+        if (parseLine(line, "Dirty:")) |val| result.dirty = val;
+        if (parseLine(line, "Writeback:")) |val| result.writeback = val;
+        if (parseLine(line, "KernelStack:")) |val| result.kernel_stack = val;
+        if (parseLine(line, "PageTables:")) |val| result.page_tables = val;
+        if (parseLine(line, "Slab:")) |val| result.slab = val;
     }
 
     result.mem_buff_cache = buffers + cached;
@@ -77,9 +98,21 @@ pub fn main() !void {
     var mem_available_str: [16]u8 = undefined;
     var mem_shared_str: [16]u8 = undefined;
     var mem_cache_str: [16]u8 = undefined;
+
     var swap_total_str: [16]u8 = undefined;
     var swap_free_str: [16]u8 = undefined;
     var swap_used_str: [16]u8 = undefined;
+
+    var active_str: [16]u8 = undefined;
+    var inactive_str: [16]u8 = undefined;
+    var anonpages_str: [16]u8 = undefined;
+    var mapped_str: [16]u8 = undefined;
+    var dirty_str: [16]u8 = undefined;
+    var writeback_str: [16]u8 = undefined;
+    var kernelstack_str: [16]u8 = undefined;
+    var pagetables_str: [16]u8 = undefined;
+    var slab_str: [16]u8 = undefined;
+
     var total_usage_str: [16]u8 = undefined;
 
     const total_usage = mem_info.mem_used + mem_info.swap_used;
@@ -88,5 +121,5 @@ pub fn main() !void {
     const total_percentage = @as(f64, @floatFromInt(total_usage)) /
         @as(f64, @floatFromInt(mem_info.mem_total + mem_info.swap_total)) * 100;
 
-    try std.io.getStdOut().writer().print("{{\"text\":\"  {s} · {d:.0}%\",\"tooltip\":\"Total · {s}\\nUsed · {s}\\nFree · {s}\\nAvailable · {s}\\nShared · {s}\\nBuffer / Cache · {s}\\n\\nSwap Total · {s}\\nSwap Free · {s}\\nSwap Used · {s}\"}}", .{ formatted_total_usage, total_percentage, format(mem_info.mem_total, &mem_total_str), format(mem_info.mem_used, &mem_used_str), format(mem_info.mem_free, &mem_free_str), format(mem_info.mem_available, &mem_available_str), format(mem_info.mem_shared, &mem_shared_str), format(mem_info.mem_buff_cache, &mem_cache_str), format(mem_info.swap_total, &swap_total_str), format(mem_info.swap_free, &swap_free_str), format(mem_info.swap_used, &swap_used_str) });
+    try std.io.getStdOut().writer().print("{{\"text\":\"  {s} · {d:.0}%\",\"tooltip\":\"Total · {s}\\nUsed · {s}\\nFree · {s}\\nAvailable · {s}\\nShared · {s}\\nBuffer / Cache · {s}\\n\\nActive · {s}\\nInactive · {s}\\nAnon Pages · {s}\\nMapped · {s}\\nDirty · {s}\\nWriteback · {s}\\nKernel Stack · {s}\\nPage Tables · {s}\\nSlab · {s}\\n\\nSwap Total · {s}\\nSwap Free · {s}\\nSwap Used · {s}\"}}", .{ formatted_total_usage, total_percentage, format(mem_info.mem_total, &mem_total_str), format(mem_info.mem_used, &mem_used_str), format(mem_info.mem_free, &mem_free_str), format(mem_info.mem_available, &mem_available_str), format(mem_info.mem_shared, &mem_shared_str), format(mem_info.mem_buff_cache, &mem_cache_str), format(mem_info.active, &active_str), format(mem_info.inactive, &inactive_str), format(mem_info.anon_pages, &anonpages_str), format(mem_info.mapped, &mapped_str), format(mem_info.dirty, &dirty_str), format(mem_info.writeback, &writeback_str), format(mem_info.kernel_stack, &kernelstack_str), format(mem_info.page_tables, &pagetables_str), format(mem_info.slab, &slab_str), format(mem_info.swap_total, &swap_total_str), format(mem_info.swap_free, &swap_free_str), format(mem_info.swap_used, &swap_used_str) });
 }
