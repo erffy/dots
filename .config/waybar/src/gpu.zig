@@ -51,19 +51,12 @@ fn getGPUInfo(allocator: std.mem.Allocator) !GPUInfo {
     const base_device = "/sys/class/hwmon/hwmon2/device";
     const base_hwmon = "/sys/class/hwmon/hwmon2";
 
-    const syspaths = struct {
-        mem_total: []const u8 = "mem_info_vram_total",
-        mem_used: []const u8 = "mem_info_vram_used",
-        gpu_busy: []const u8 = "gpu_busy_percent",
-        mem_busy: []const u8 = "mem_busy_percent",
-    }{};
-
-    const mem_total_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ base_device, syspaths.mem_total });
+    const mem_total_path = try std.fmt.allocPrint(allocator, "{s}/mem_info_vram_total", .{base_device});
     defer allocator.free(mem_total_path);
     const memory_total_raw = try readSysFile(mem_total_path);
     const memory_total = parseNumber(memory_total_raw);
 
-    const mem_used_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ base_device, syspaths.mem_used });
+    const mem_used_path = try std.fmt.allocPrint(allocator, "{s}/mem_info_vram_used", .{base_device});
     defer allocator.free(mem_used_path);
     const memory_used_raw = try readSysFile(mem_used_path);
     const memory_used = parseNumber(memory_used_raw);
@@ -73,13 +66,13 @@ fn getGPUInfo(allocator: std.mem.Allocator) !GPUInfo {
     const temperature_raw = try readSysFile(temperature_path);
     const temperature = parseFloat(temperature_raw) / 1000.0;
 
-    const gpu_busy_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ base_device, syspaths.gpu_busy });
+    const gpu_busy_path = try std.fmt.allocPrint(allocator, "{s}/gpu_busy_percent", .{base_device});
     defer allocator.free(gpu_busy_path);
 
     const gpu_busy_raw = try readSysFile(gpu_busy_path);
     const gpu_busy_percent = parseNumber(gpu_busy_raw);
 
-    const mem_busy_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ base_device, syspaths.mem_busy });
+    const mem_busy_path = try std.fmt.allocPrint(allocator, "{s}/mem_busy_percent", .{base_device});
     defer allocator.free(mem_busy_path);
 
     const mem_busy_raw = try readSysFile(mem_busy_path);
@@ -95,15 +88,28 @@ fn getGPUInfo(allocator: std.mem.Allocator) !GPUInfo {
     };
 }
 
-fn formatMemory(size: u64, output: []u8) []const u8 {
-    return if (size >= GIGA)
-        std.fmt.bufPrint(output, "{d:.2}G", .{@as(f64, @floatFromInt(size)) / GIGA}) catch ""
-    else if (size >= MEGA)
-        std.fmt.bufPrint(output, "{d:.2}M", .{@as(f64, @floatFromInt(size)) / MEGA}) catch ""
-    else if (size >= KILO)
-        std.fmt.bufPrint(output, "{d:.2}K", .{@as(f64, @floatFromInt(size)) / KILO}) catch ""
-    else
-        std.fmt.bufPrint(output, "{}B", .{size}) catch "";
+const FmtSize = struct {
+    size: u64,
+
+    pub fn format(self: FmtSize, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+        return if (self.size >= GIGA) {
+            try std.fmt.formatType(@as(f64, @floatFromInt(self.size)) / GIGA, fmt, options, writer, 0);
+            try writer.writeByte('G');
+        } else if (self.size >= MEGA) {
+            try std.fmt.formatType(@as(f64, @floatFromInt(self.size)) / MEGA, fmt, options, writer, 0);
+            try writer.writeByte('M');
+        } else if (self.size >= KILO) {
+            try std.fmt.formatType(@as(f64, @floatFromInt(self.size)) / KILO, fmt, options, writer, 0);
+            try writer.writeByte('K');
+        } else {
+            try std.fmt.formatType(self.size, fmt, options, writer, 0);
+            try writer.writeByte('B');
+        };
+    }
+};
+
+fn fmtSize(size: u64) FmtSize {
+    return .{ .size = size };
 }
 
 pub fn main() !void {
@@ -116,18 +122,14 @@ pub fn main() !void {
         return;
     };
 
-    var total_mem_str: [16]u8 = undefined;
-    var used_mem_str: [16]u8 = undefined;
-    var free_mem_str: [16]u8 = undefined;
-
     try std.io.getStdOut().writer().print(
-        "{{\"text\":\"  {d}% · {d}°C\",\"tooltip\":\"Memory Total · {s}\\nMemory Used · {s}\\nMemory Free · {s}\"}}",
+        "{{\"text\":\"  {d}% · {d}°C\",\"tooltip\":\"Memory Total · {d:.2}\\nMemory Used · {d:.2}\\nMemory Free · {d:.2}\"}}",
         .{
             gpu_info.gpu_busy_percent,
             gpu_info.temperature,
-            formatMemory(gpu_info.memory_total, &total_mem_str),
-            formatMemory(gpu_info.memory_used, &used_mem_str),
-            formatMemory(gpu_info.memory_free, &free_mem_str),
+            fmtSize(gpu_info.memory_total),
+            fmtSize(gpu_info.memory_used),
+            fmtSize(gpu_info.memory_free),
         },
     );
 }
