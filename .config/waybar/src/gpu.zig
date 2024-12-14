@@ -117,19 +117,17 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    const gpu_info = getGPUInfo(allocator) catch |err| {
-        std.debug.print("Failed to get GPU info: {}\n", .{err});
-        return;
-    };
+    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
 
-    try std.io.getStdOut().writer().print(
-        "{{\"text\":\"  {d}% · {d}°C\",\"tooltip\":\"Memory Total · {d:.2}\\nMemory Used · {d:.2}\\nMemory Free · {d:.2}\"}}",
-        .{
-            gpu_info.gpu_busy_percent,
-            gpu_info.temperature,
-            fmtSize(gpu_info.memory_total),
-            fmtSize(gpu_info.memory_used),
-            fmtSize(gpu_info.memory_free),
-        },
-    );
+    const gpu_info = try getGPUInfo(allocator);
+
+    try bw.writer().print("{{\"text\":\"  {d}% · {d}°C\",\"tooltip\":\"Memory Total · {d:.2}\\nMemory Used · {d:.2}\\nMemory Free · {d:.2}\"}}", .{
+        gpu_info.gpu_busy_percent,
+        gpu_info.temperature,
+        fmtSize(gpu_info.memory_total),
+        fmtSize(gpu_info.memory_used),
+        fmtSize(gpu_info.memory_free),
+    });
+
+    try bw.flush();
 }
