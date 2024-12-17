@@ -1,4 +1,8 @@
 const std = @import("std");
+const fmt = std.fmt;
+const mem = std.mem;
+const io = std.io;
+const fs = std.fs;
 
 const KILO: u64 = 1024;
 const MEGA: u64 = KILO * KILO;
@@ -7,19 +11,19 @@ const GIGA: u64 = KILO * MEGA;
 const FmtSize = struct {
     size: u64,
 
-    pub fn format(self: FmtSize, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(self: FmtSize, comptime frmt: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
         const scaled_size = self.size * KILO;
         return if (scaled_size >= GIGA) {
-            try std.fmt.formatType(@as(f64, @floatFromInt(scaled_size)) / GIGA, fmt, options, writer, 0);
+            try fmt.formatType(@as(f64, @floatFromInt(scaled_size)) / GIGA, frmt, options, writer, 0);
             try writer.writeByte('G');
         } else if (scaled_size >= MEGA) {
-            try std.fmt.formatType(@as(f64, @floatFromInt(scaled_size)) / MEGA, fmt, options, writer, 0);
+            try fmt.formatType(@as(f64, @floatFromInt(scaled_size)) / MEGA, frmt, options, writer, 0);
             try writer.writeByte('M');
         } else if (scaled_size >= KILO) {
-            try std.fmt.formatType(@as(f64, @floatFromInt(scaled_size)) / KILO, fmt, options, writer, 0);
+            try fmt.formatType(@as(f64, @floatFromInt(scaled_size)) / KILO, frmt, options, writer, 0);
             try writer.writeByte('K');
         } else {
-            try std.fmt.formatType(scaled_size, fmt, options, writer, 0);
+            try fmt.formatType(scaled_size, frmt, options, writer, 0);
             try writer.writeByte('B');
         };
     }
@@ -51,7 +55,7 @@ const MemoryInfo = struct {
     page_tables: u64 = 0,
     slab: u64 = 0,
 
-    pub fn format(mem_info: MemoryInfo, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(mem_info: MemoryInfo, comptime _: []const u8, _: fmt.FormatOptions, writer: anytype) !void {
         const total_usage = mem_info.mem_used + mem_info.swap_used;
         const total_percentage = @as(f64, @floatFromInt(total_usage)) / @as(f64, @floatFromInt(mem_info.mem_total + mem_info.swap_total)) * 100;
 
@@ -91,41 +95,41 @@ fn asInt(s: []const u8) u128 {
 
 fn parse() !MemoryInfo {
     var file_buf: [1024]u8 = undefined;
-    var content = try std.fs.cwd().readFile("/proc/meminfo", &file_buf);
+    var content = try fs.cwd().readFile("/proc/meminfo", &file_buf);
 
     var result = MemoryInfo{};
     var buffers: u64 = 0;
     var cached: u64 = 0;
     var pos: usize = 0;
-    while (std.mem.indexOfScalarPos(u8, content, pos, ':')) |idx| {
+    while (mem.indexOfScalarPos(u8, content, pos, ':')) |idx| {
         const label = content[pos..idx];
         var name_int: u128 = 0;
-        const name_buf = std.mem.asBytes(&name_int);
+        const name_buf = mem.asBytes(&name_int);
         @memcpy(name_buf[0..label.len], label);
         const line_start = idx + 1;
-        pos = (std.mem.indexOfScalarPos(u8, content, line_start, '\n') orelse break) + 1;
+        pos = (mem.indexOfScalarPos(u8, content, line_start, '\n') orelse break) + 1;
 
-        const value_start = std.mem.trimLeft(u8, content[line_start..pos], " ");
-        const end_index = std.mem.indexOfScalar(u8, value_start, ' ') orelse value_start.len;
+        const value_start = mem.trimLeft(u8, content[line_start..pos], " ");
+        const end_index = mem.indexOfScalar(u8, value_start, ' ') orelse value_start.len;
         const value_str = value_start[0..end_index];
         switch (name_int) {
-            asInt("MemTotal") => result.mem_total = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("MemFree") => result.mem_free = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("MemAvailable") => result.mem_available = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("Buffers") => buffers = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("Cached") => cached = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("Shmem") => result.mem_shared = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("SwapTotal") => result.swap_total = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("SwapFree") => result.swap_free = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("Active") => result.active = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("Inactive") => result.inactive = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("AnonPages") => result.anon_pages = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("Mapped") => result.mapped = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("Dirty") => result.dirty = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("Writeback") => result.writeback = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("KernelStack") => result.kernel_stack = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("PageTables") => result.page_tables = try std.fmt.parseUnsigned(u64, value_str, 10),
-            asInt("Slab") => result.slab = try std.fmt.parseUnsigned(u64, value_str, 10),
+            asInt("MemTotal") => result.mem_total = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("MemFree") => result.mem_free = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("MemAvailable") => result.mem_available = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("Buffers") => buffers = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("Cached") => cached = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("Shmem") => result.mem_shared = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("SwapTotal") => result.swap_total = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("SwapFree") => result.swap_free = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("Active") => result.active = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("Inactive") => result.inactive = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("AnonPages") => result.anon_pages = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("Mapped") => result.mapped = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("Dirty") => result.dirty = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("Writeback") => result.writeback = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("KernelStack") => result.kernel_stack = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("PageTables") => result.page_tables = try fmt.parseUnsigned(u64, value_str, 10),
+            asInt("Slab") => result.slab = try fmt.parseUnsigned(u64, value_str, 10),
             else => {},
         }
     }
@@ -137,7 +141,7 @@ fn parse() !MemoryInfo {
 
 pub fn main() !void {
     const mem_info = try parse();
-    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
+    var bw = io.bufferedWriter(io.getStdOut().writer());
     try bw.writer().print("{}", .{mem_info});
     try bw.flush();
 }

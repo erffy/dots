@@ -1,4 +1,9 @@
 const std = @import("std");
+const fs = std.fs;
+const mem = std.mem;
+const fmt = std.fmt;
+const heap = std.heap;
+const io = std.io;
 
 const KILO: u64 = 1024;
 const MEGA: u64 = KILO * KILO;
@@ -14,25 +19,25 @@ const GPUInfo = struct {
 };
 
 fn readSysFile(path: []const u8) ![]const u8 {
-    const file = try std.fs.cwd().openFile(path, .{});
+    const file = try fs.cwd().openFile(path, .{});
     defer file.close();
 
     var buffer: [4096]u8 = undefined;
     const bytes_read = try file.read(&buffer);
     const content = buffer[0..bytes_read];
 
-    return std.mem.trim(u8, content, " \n");
+    return mem.trim(u8, content, " \n");
 }
 
 fn parseNumber(content: []const u8) u64 {
-    return std.fmt.parseInt(u64, content, 10) catch |err| blk: {
+    return fmt.parseInt(u64, content, 10) catch |err| blk: {
         std.debug.print("Number parsing error: {}\n", .{err});
         break :blk 0;
     };
 }
 
 fn parseFloat(content: []const u8) f64 {
-    return std.fmt.parseFloat(f64, content) catch |err| blk: {
+    return fmt.parseFloat(f64, content) catch |err| blk: {
         std.debug.print("Float parsing error: {}\n", .{err});
         break :blk 0.0;
     };
@@ -40,39 +45,39 @@ fn parseFloat(content: []const u8) f64 {
 
 fn findPath(base_paths: []const []const u8) ![]const u8 {
     for (base_paths) |path| {
-        const file = std.fs.cwd().openFile(path, .{}) catch continue;
+        const file = fs.cwd().openFile(path, .{}) catch continue;
         defer file.close();
-        return try std.heap.page_allocator.dupe(u8, path);
+        return try heap.page_allocator.dupe(u8, path);
     }
     return error.PathNotFound;
 }
 
-fn getGPUInfo(allocator: std.mem.Allocator) !GPUInfo {
+fn getGPUInfo(allocator: mem.Allocator) !GPUInfo {
     const base_device = "/sys/class/hwmon/hwmon2/device";
     const base_hwmon = "/sys/class/hwmon/hwmon2";
 
-    const mem_total_path = try std.fmt.allocPrint(allocator, "{s}/mem_info_vram_total", .{base_device});
+    const mem_total_path = try fmt.allocPrint(allocator, "{s}/mem_info_vram_total", .{base_device});
     defer allocator.free(mem_total_path);
     const memory_total_raw = try readSysFile(mem_total_path);
     const memory_total = parseNumber(memory_total_raw);
 
-    const mem_used_path = try std.fmt.allocPrint(allocator, "{s}/mem_info_vram_used", .{base_device});
+    const mem_used_path = try fmt.allocPrint(allocator, "{s}/mem_info_vram_used", .{base_device});
     defer allocator.free(mem_used_path);
     const memory_used_raw = try readSysFile(mem_used_path);
     const memory_used = parseNumber(memory_used_raw);
 
-    const temperature_path = try std.fmt.allocPrint(allocator, "{s}/temp1_input", .{base_hwmon});
+    const temperature_path = try fmt.allocPrint(allocator, "{s}/temp1_input", .{base_hwmon});
     defer allocator.free(temperature_path);
     const temperature_raw = try readSysFile(temperature_path);
     const temperature = parseFloat(temperature_raw) / 1000.0;
 
-    const gpu_busy_path = try std.fmt.allocPrint(allocator, "{s}/gpu_busy_percent", .{base_device});
+    const gpu_busy_path = try fmt.allocPrint(allocator, "{s}/gpu_busy_percent", .{base_device});
     defer allocator.free(gpu_busy_path);
 
     const gpu_busy_raw = try readSysFile(gpu_busy_path);
     const gpu_busy_percent = parseNumber(gpu_busy_raw);
 
-    const mem_busy_path = try std.fmt.allocPrint(allocator, "{s}/mem_busy_percent", .{base_device});
+    const mem_busy_path = try fmt.allocPrint(allocator, "{s}/mem_busy_percent", .{base_device});
     defer allocator.free(mem_busy_path);
 
     const mem_busy_raw = try readSysFile(mem_busy_path);
@@ -91,18 +96,18 @@ fn getGPUInfo(allocator: std.mem.Allocator) !GPUInfo {
 const FmtSize = struct {
     size: u64,
 
-    pub fn format(self: FmtSize, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(self: FmtSize, comptime frmt: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
         return if (self.size >= GIGA) {
-            try std.fmt.formatType(@as(f64, @floatFromInt(self.size)) / GIGA, fmt, options, writer, 0);
+            try fmt.formatType(@as(f64, @floatFromInt(self.size)) / GIGA, frmt, options, writer, 0);
             try writer.writeByte('G');
         } else if (self.size >= MEGA) {
-            try std.fmt.formatType(@as(f64, @floatFromInt(self.size)) / MEGA, fmt, options, writer, 0);
+            try fmt.formatType(@as(f64, @floatFromInt(self.size)) / MEGA, frmt, options, writer, 0);
             try writer.writeByte('M');
         } else if (self.size >= KILO) {
-            try std.fmt.formatType(@as(f64, @floatFromInt(self.size)) / KILO, fmt, options, writer, 0);
+            try fmt.formatType(@as(f64, @floatFromInt(self.size)) / KILO, frmt, options, writer, 0);
             try writer.writeByte('K');
         } else {
-            try std.fmt.formatType(self.size, fmt, options, writer, 0);
+            try fmt.formatType(self.size, frmt, options, writer, 0);
             try writer.writeByte('B');
         };
     }
@@ -113,11 +118,11 @@ fn fmtSize(size: u64) FmtSize {
 }
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
+    var bw = io.bufferedWriter(io.getStdOut().writer());
 
     const gpu_info = try getGPUInfo(allocator);
 
