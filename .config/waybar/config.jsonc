@@ -97,10 +97,8 @@
   },
   "custom/ping": {
     "interval": 1,
-    "exec": "~/.config/waybar/modules/ping",
-    "return-type": "json",
-    "min-length": 10,
-    "max-length": 35
+    "exec": "~/.config/waybar/zig-out/bin/ping",
+    "return-type": "json"
   },
   "custom/updates": {
     "interval": 120,
