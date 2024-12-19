@@ -1,16 +1,10 @@
-// This module is currently Work In Progress
-// This module is currently Work In Progress
-// This module is currently Work In Progress
-// This module is currently Work In Progress
-// This module is currently Work In Progress
-
 const std = @import("std");
 const mem = std.mem;
 const process = std.process;
-const time = std.time;
 const heap = std.heap;
 const io = std.io;
 const sort = std.sort;
+const ascii = std.ascii;
 
 const BUFFER_SIZE = 4096;
 const MAX_VERSION_LENGTH = 20;
@@ -24,7 +18,7 @@ const UpdateInfo = struct {
 
 fn escapeJson(input: []const u8, output: []u8) void {
     const escape_chars = &[_]u8{ '"', '\\', '\n', '\r', '\t' };
-    const escape_replacements = &[_]u8{ '"', '\\', 'b', 'f', 'n', 'r', 't' };
+    const escape_replacements = &[_]u8{ '"', '\\', 'n', 'r', 't' };
     var j: usize = 0;
 
     for (input) |char| {
@@ -48,23 +42,30 @@ fn compareUpdates(context: void, a: UpdateInfo, b: UpdateInfo) bool {
     return mem.lessThan(u8, &a.pkg_name, &b.pkg_name);
 }
 
-fn parseLine(line: []const u8, pkg: []u8, local_ver: []u8, new_ver: []u8) bool {
-    var token_iter = mem.tokenize(u8, line, " ");
+fn parseLine(line: []const u8, info: *UpdateInfo) bool {
+    const trimmed = mem.trim(u8, line, &ascii.whitespace);
+    if (trimmed.len == 0) return false;
 
-    const package_name = token_iter.next() orelse return false;
-    @memcpy(pkg[0..package_name.len], package_name);
-    pkg[package_name.len] = 0;
+    var parts = mem.split(u8, trimmed, "->");
+    const left_part = mem.trim(u8, parts.first(), &ascii.whitespace);
+    const new_version = mem.trim(u8, parts.rest(), &ascii.whitespace);
+    if (new_version.len == 0) return false;
 
-    const current_ver = token_iter.next() orelse return false;
-    if (!mem.eql(u8, current_ver, "->")) return false;
+    const last_space = mem.lastIndexOf(u8, left_part, " ") orelse return false;
+    const pkg_name = left_part[0..last_space];
+    const local_ver = left_part[last_space + 1 ..];
 
-    const local_version = token_iter.next() orelse return false;
-    @memcpy(local_ver[0..local_version.len], local_version);
-    local_ver[local_version.len] = 0;
+    if (pkg_name.len >= info.pkg_name.len or
+        local_ver.len >= info.local_version.len or
+        new_version.len >= info.new_version.len) return false;
 
-    const new_version = token_iter.next() orelse return false;
-    @memcpy(new_ver[0..new_version.len], new_version);
-    new_ver[new_version.len] = 0;
+    @memset(&info.pkg_name, 0);
+    @memset(&info.local_version, 0);
+    @memset(&info.new_version, 0);
+
+    @memcpy(info.pkg_name[0..pkg_name.len], pkg_name);
+    @memcpy(info.local_version[0..local_ver.len], local_ver);
+    @memcpy(info.new_version[0..new_version.len], new_version);
 
     return true;
 }
@@ -74,56 +75,59 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    var child = process.Child.init(&.{ "/usr/bin/checkupdates", "--nocolor" }, allocator);
-
+    var child = process.Child.init(&[_][]const u8{ "/usr/bin/checkupdates", "--nocolor" }, allocator);
     child.stdout_behavior = .Pipe;
     try child.spawn();
 
     const stdout = child.stdout orelse return error.NoStdout;
-    const reader = stdout.reader();
+    var buf_reader = io.bufferedReader(stdout.reader());
     var line_buf: [BUFFER_SIZE]u8 = undefined;
     var updates = [_]UpdateInfo{mem.zeroes(UpdateInfo)} ** MAX_UPDATES;
     var updates_count: usize = 0;
 
-    while (try reader.readUntilDelimiterOrEof(&line_buf, '\n')) |line| {
+    while (try buf_reader.reader().readUntilDelimiterOrEof(&line_buf, '\n')) |line| {
         if (updates_count >= MAX_UPDATES) break;
+        if (line.len == 0) continue;
 
-        var pkg: [BUFFER_SIZE]u8 = undefined;
-        var local_ver: [MAX_VERSION_LENGTH + 1]u8 = undefined;
-        var new_ver: [MAX_VERSION_LENGTH + 1]u8 = undefined;
-
-        if (parseLine(line, &pkg, &local_ver, &new_ver)) {
-            @memcpy(&updates[updates_count].pkg_name, &pkg);
-            @memcpy(&updates[updates_count].local_version, &local_ver);
-            @memcpy(&updates[updates_count].new_version, &new_ver);
-            updates_count += 1;
-        }
+        if (parseLine(line, &updates[updates_count])) updates_count += 1;
     }
 
     _ = try child.wait();
 
-    sort.insertion(UpdateInfo, &updates, {}, compareUpdates);
+    sort.insertion(UpdateInfo, updates[0..updates_count], {}, compareUpdates);
 
     var updates_str = std.ArrayList(u8).init(allocator);
     defer updates_str.deinit();
 
-    for (0..updates_count) |i| {
-        try updates_str.writer().print("{s:<25} {s} -> {s}\n", .{ mem.sliceTo(&updates[i].pkg_name, 0), mem.sliceTo(&updates[i].local_version, 0), mem.sliceTo(&updates[i].new_version, 0) });
+    for (updates[0..updates_count], 0..) |update, i| {
+        try updates_str.writer().print("{s:<25} {s} -> {s}\n", .{
+            mem.sliceTo(&update.pkg_name, 0),
+            mem.sliceTo(&update.local_version, 0),
+            mem.sliceTo(&update.new_version, 0),
+        });
+
+        if (i == MAX_UPDATES - 1 and updates_count >= MAX_UPDATES) {
+            try updates_str.writer().writeAll("...");
+            break;
+        }
     }
 
-    if (updates_str.items.len > 0 and updates_str.items[updates_str.items.len - 1] == '\n') {
-        _ = updates_str.pop();
-    }
+    if (updates_str.items.len > 0 and updates_str.items[updates_str.items.len - 1] == '\n') _ = updates_str.pop();
 
     var pkg_list_escaped = [_]u8{0} ** (BUFFER_SIZE * 10);
     escapeJson(updates_str.items, &pkg_list_escaped);
 
     var bw = io.bufferedWriter(io.getStdOut().writer());
+    const writer = bw.writer();
 
     if (updates_count > 0) {
-        try bw.writer().print("{{\"text\":\"{d}\",\"tooltip\":\"{d} updates available.\\n\\n{s}\"}}\n", .{ updates_count, updates_count, &pkg_list_escaped });
+        try writer.print("{{\"text\":\"\",\"tooltip\":\"{d} updates available.\\n\\n{s}{s}\"}}", .{
+            updates_count,
+            mem.sliceTo(&pkg_list_escaped, 0),
+            if (updates_count >= MAX_UPDATES) "\\n...and more updates." else "",
+        });
     } else {
-        try bw.writer().print("{{\"text\":\"\",\"tooltip\":\"You're up to date!\"}}\n", .{});
+        try writer.print("{{\"text\":\"\",\"tooltip\":\"You're up to date!\"}}", .{});
     }
 
     try bw.flush();

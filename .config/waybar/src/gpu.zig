@@ -4,6 +4,7 @@ const mem = std.mem;
 const fmt = std.fmt;
 const heap = std.heap;
 const io = std.io;
+const debug = std.debug;
 
 const KILO: u64 = 1024;
 const MEGA: u64 = KILO * KILO;
@@ -31,14 +32,14 @@ fn readSysFile(path: []const u8) ![]const u8 {
 
 fn parseNumber(content: []const u8) u64 {
     return fmt.parseInt(u64, content, 10) catch |err| blk: {
-        std.debug.print("Number parsing error: {}\n", .{err});
+        debug.print("Number parsing error: {}\n", .{err});
         break :blk 0;
     };
 }
 
 fn parseFloat(content: []const u8) f64 {
     return fmt.parseFloat(f64, content) catch |err| blk: {
-        std.debug.print("Float parsing error: {}\n", .{err});
+        debug.print("Float parsing error: {}\n", .{err});
         break :blk 0.0;
     };
 }

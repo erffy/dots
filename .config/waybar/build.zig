@@ -1,54 +1,54 @@
 const std = @import("std");
 
+const Executable = struct {
+    name: []const u8,
+    source: []const u8,
+    run_args: ?[]const []const u8 = null,
+};
+
+const executables = [_]Executable{
+    .{ .name = "memory", .source = "src/memory.zig" },
+    .{ .name = "gpu", .source = "src/gpu.zig" },
+    .{ .name = "ping", .source = "src/ping.zig" },
+    .{ .name = "checkupdates", .source = "src/checkupdates.zig" },
+};
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{ .preferred_optimize_mode = .ReleaseFast });
-
-    const memory = b.addExecutable(.{
-        .name = "memory",
-        .root_source_file = b.path("src/memory.zig"),
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
+    const optimize = b.standardOptimizeOption(.{
+        .preferred_optimize_mode = .ReleaseFast,
     });
 
-    const gpu = b.addExecutable(.{
-        .name = "gpu",
-        .root_source_file = b.path("src/gpu.zig"),
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
-    });
+    for (executables) |exe| {
+        const exe_obj = b.addExecutable(.{
+            .name = exe.name,
+            .root_source_file = b.path(exe.source),
+            .target = target,
+            .optimize = optimize,
+            .link_libc = true,
+        });
 
-    const ping = b.addExecutable(.{
-        .name = "ping",
-        .root_source_file = b.path("src/ping.zig"),
-        .target = target,
-        .optimize = optimize,
-        .link_libc = true,
-    });
+        const install_exe = b.addInstallArtifact(exe_obj, .{});
+        b.getInstallStep().dependOn(&install_exe.step);
 
-    b.installArtifact(memory);
-    b.installArtifact(gpu);
-    b.installArtifact(ping);
+        const run_cmd = b.addRunArtifact(exe_obj);
+        if (b.args) |args| run_cmd.addArgs(args);
+        if (exe.run_args) |args| run_cmd.addArgs(args);
 
-    const memory_run = b.addRunArtifact(memory);
-    memory_run.step.dependOn(b.getInstallStep());
-
-    const gpu_run = b.addRunArtifact(gpu);
-    gpu_run.step.dependOn(b.getInstallStep());
-
-    const ping_run = b.addRunArtifact(ping);
-    ping_run.step.dependOn(b.getInstallStep());
-
-    if (b.args) |args| {
-        memory_run.addArgs(args);
-        gpu_run.addArgs(args);
-        ping_run.addArgs(args);
+        const run_step = b.step(b.fmt("run-{s}", .{exe.name}), b.fmt("Run the {s} executable", .{exe.name}));
+        run_step.dependOn(&run_cmd.step);
     }
 
-    const run_step = b.step("run", "Run the app");
-    run_step.dependOn(&memory_run.step);
-    run_step.dependOn(&ping.step);
-    run_step.dependOn(&gpu_run.step);
+    const fmt_step = b.step("fmt", "Check source formatting");
+    const fmt_cmd = b.addSystemCommand(&[_][]const u8{ "zig", "fmt", "--check", "src" });
+    fmt_step.dependOn(&fmt_cmd.step);
+
+    const clean_step = b.step("clean", "Clean build artifacts");
+    const clean_cmd = b.addSystemCommand(&[_][]const u8{
+        "rm",
+        "-rf",
+        "zig-cache",
+        "zig-out",
+    });
+    clean_step.dependOn(&clean_cmd.step);
 }

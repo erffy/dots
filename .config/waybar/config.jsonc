@@ -100,10 +100,11 @@
     "exec": "~/.config/waybar/zig-out/bin/ping",
     "return-type": "json"
   },
+  // NOTE: 'pacman-contrib' and 'fakeroot' packages is required for this module.
   "custom/updates": {
     "interval": 120,
     "escape": true,
-    "exec": "~/.config/waybar/modules/checkupdates",
+    "exec": "~/.config/waybar/zig-out/bin/checkupdates",
     "on-click-right": "pkexec ~/.local/bin/fetchmirrors",
     "return-type": "json"
   },
