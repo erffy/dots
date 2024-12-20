@@ -104,7 +104,7 @@
   "custom/updates": {
     "interval": 120,
     "escape": true,
-    "exec": "~/.config/waybar/zig-out/bin/checkupdates",
+    "exec": "~/.config/waybar/zig-out/bin/updates",
     "on-click-right": "pkexec ~/.local/bin/fetchmirrors",
     "return-type": "json"
   },

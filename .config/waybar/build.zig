@@ -10,7 +10,7 @@ const executables = [_]Executable{
     .{ .name = "memory", .source = "src/memory.zig" },
     .{ .name = "gpu", .source = "src/gpu.zig" },
     .{ .name = "ping", .source = "src/ping.zig" },
-    .{ .name = "checkupdates", .source = "src/checkupdates.zig" },
+    .{ .name = "updates", .source = "src/updates.zig" },
 };
 
 pub fn build(b: *std.Build) void {

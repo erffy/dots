@@ -4,7 +4,9 @@ const process = std.process;
 const heap = std.heap;
 const io = std.io;
 const sort = std.sort;
+const fs = std.fs;
 const ascii = std.ascii;
+const allocator = heap.page_allocator;
 
 const BUFFER_SIZE = 4096;
 const MAX_VERSION_LENGTH = 20;
@@ -71,28 +73,19 @@ fn parseLine(line: []const u8, info: *UpdateInfo) bool {
 }
 
 pub fn main() !void {
-    var gpa = heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-    defer _ = gpa.deinit();
+    const updates_output = try checkupdates();
+    defer if (updates_output.len > 0) allocator.free(updates_output);
 
-    var child = process.Child.init(&[_][]const u8{ "/usr/bin/checkupdates", "--nocolor" }, allocator);
-    child.stdout_behavior = .Pipe;
-    try child.spawn();
-
-    const stdout = child.stdout orelse return error.NoStdout;
-    var buf_reader = io.bufferedReader(stdout.reader());
-    var line_buf: [BUFFER_SIZE]u8 = undefined;
     var updates = [_]UpdateInfo{mem.zeroes(UpdateInfo)} ** MAX_UPDATES;
     var updates_count: usize = 0;
 
-    while (try buf_reader.reader().readUntilDelimiterOrEof(&line_buf, '\n')) |line| {
+    var lines = mem.split(u8, updates_output, "\n");
+    while (lines.next()) |line| {
         if (updates_count >= MAX_UPDATES) break;
         if (line.len == 0) continue;
 
         if (parseLine(line, &updates[updates_count])) updates_count += 1;
     }
-
-    _ = try child.wait();
 
     sort.insertion(UpdateInfo, updates[0..updates_count], {}, compareUpdates);
 
@@ -131,4 +124,108 @@ pub fn main() !void {
     }
 
     try bw.flush();
+}
+
+const CheckUpdatesError = error{
+    CannotCreateTempDb,
+    CannotFetchUpdates,
+    CommandFailed,
+};
+
+pub fn checkupdates() ![]u8 {
+    const tmp_base = std.posix.getenv("TMPDIR") orelse "/var/tmp";
+    const uid = std.posix.getenv("EUID") orelse "1000";
+
+    var db_path_buffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
+    var tmp_local_buffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
+
+    const db_path = try std.fmt.bufPrint(&db_path_buffer, "{s}/checkup-db-{s}", .{ tmp_base, uid });
+
+    _ = fs.openDirAbsolute(db_path, .{}) catch |err| switch (err) {
+        error.FileNotFound => try fs.makeDirAbsolute(db_path),
+        else => |e| return e,
+    };
+    defer fs.deleteTreeAbsolute(db_path) catch {};
+
+    const local_db = "/var/lib/pacman/local";
+    const tmp_local = try std.fmt.bufPrint(&tmp_local_buffer, "{s}/local", .{db_path});
+
+    fs.symLinkAbsolute(local_db, tmp_local, .{}) catch |err| switch (err) {
+        error.PathAlreadyExists => {},
+        else => return err,
+    };
+
+    const sync_result = try runCommand(&[_][]const u8{
+        "fakeroot",
+        "pacman",
+        "-Sy",
+        "--dbpath",
+        db_path,
+        "--logfile",
+        "/dev/null",
+    });
+
+    if (sync_result != 0) {
+        fs.deleteTreeAbsolute(db_path) catch {};
+        return CheckUpdatesError.CannotFetchUpdates;
+    }
+
+    const updates = try getUpdates(db_path);
+    if (updates.len == 0) {
+        fs.deleteTreeAbsolute(db_path) catch {};
+        return &[_]u8{};
+    }
+
+    return updates;
+}
+
+fn getUpdates(db_path: []const u8) ![]u8 {
+    var child = process.Child.init(&[_][]const u8{
+        "pacman",
+        "-Qu",
+        "--dbpath",
+        db_path,
+    }, allocator);
+
+    child.stdout_behavior = .Pipe;
+    child.stderr_behavior = .Pipe;
+
+    try child.spawn();
+
+    const stdout = try child.stdout.?.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    const stderr = try child.stderr.?.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    defer allocator.free(stderr);
+
+    const term = try child.wait();
+    if (term != .Exited or term.Exited != 0 or stderr.len > 0) {
+        allocator.free(stdout);
+        return CheckUpdatesError.CommandFailed;
+    }
+
+    var lines = std.ArrayList(u8).init(allocator);
+    var iter = mem.split(u8, stdout, "\n");
+    while (iter.next()) |line| {
+        if (line.len == 0) continue;
+        if (!mem.containsAtLeast(u8, line, 1, "[")) {
+            try lines.appendSlice(line);
+            try lines.append('\n');
+        }
+    }
+
+    allocator.free(stdout);
+    return lines.toOwnedSlice();
+}
+
+fn runCommand(argv: []const []const u8) !u8 {
+    var child = process.Child.init(argv, allocator);
+    child.stderr_behavior = .Ignore;
+    child.stdout_behavior = .Ignore;
+
+    try child.spawn();
+    const term = try child.wait();
+
+    return switch (term) {
+        .Exited => |code| code,
+        else => return CheckUpdatesError.CommandFailed,
+    };
 }
