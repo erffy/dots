@@ -114,10 +114,9 @@ pub fn main() !void {
     const writer = bw.writer();
 
     if (updates_count > 0) {
-        try writer.print("{{\"text\":\"\",\"tooltip\":\"{d} updates available.\\n\\n{s}{s}\"}}", .{
+        try writer.print("{{\"text\":\"\",\"tooltip\":\"{d} updates available.\\n\\n{s}\"}}", .{
             updates_count,
-            mem.sliceTo(&pkg_list_escaped, 0),
-            if (updates_count >= MAX_UPDATES) "\\n...and more updates." else "",
+            mem.sliceTo(&pkg_list_escaped, 0)
         });
     } else {
         try writer.print("{{\"text\":\"\",\"tooltip\":\"You're up to date!\"}}", .{});
@@ -197,10 +196,7 @@ fn getUpdates(db_path: []const u8) ![]u8 {
     defer allocator.free(stderr);
 
     const term = try child.wait();
-    if (term != .Exited or term.Exited != 0 or stderr.len > 0) {
-        allocator.free(stdout);
-        return CheckUpdatesError.CommandFailed;
-    }
+    if (term != .Exited or term.Exited != 0 or stderr.len > 0) allocator.free(stdout);
 
     var lines = std.ArrayList(u8).init(allocator);
     var iter = mem.split(u8, stdout, "\n");
