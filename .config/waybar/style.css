@@ -61,6 +61,7 @@ tooltip {
 #mpris,
 #custom-ping,
 #custom-updates,
+#custom-brightness,
 #custom-gpu,
 #clock,
 #battery,
@@ -117,6 +118,11 @@ tooltip {
 #custom-media,
 #mpris {
   color: @sky;
+}
+
+/* Brightness */
+#custom-brightness {
+  color: @yellow;
 }
 
 /* Ping */

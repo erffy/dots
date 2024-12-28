@@ -20,6 +20,7 @@
     "mpris",
     "custom/updates",
     "battery",
+    "custom/brightness",
     "wireplumber",
     "clock"
   ],
@@ -117,5 +118,15 @@
     "interval": 1,
     "exec": "~/.config/waybar/zig-out/bin/gpu",
     "return-type": "json"
+  },
+  "custom/brightness": {
+    "format": "  {}%",
+    "exec": "ddcutil --noconfig -b 1 getvcp 10 | grep -oP 'current.*?=\\s*\\K[0-9]+' | awk '{print $1}'",
+    "on-scroll-up": "ddcutil --noconfig --noverify -b 1 setvcp 10 + 10",
+    "on-scroll-down": "ddcutil --noconfig --noverify -b 1 setvcp 10 - 10",
+    "on-click": "ddcutil --noconfig --noverify -b 1 setvcp 10 0",
+    "on-click-right": "ddcutil --noconfig --noverify -b 1 setvcp 10 100",
+    "interval": 1,
+    "tooltip": false
   }
 }

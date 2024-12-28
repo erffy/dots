@@ -54,8 +54,8 @@ fn findPath(base_paths: []const []const u8) ![]const u8 {
 }
 
 fn getGPUInfo(allocator: mem.Allocator) !GPUInfo {
-    const base_device = "/sys/class/hwmon/hwmon2/device";
-    const base_hwmon = "/sys/class/hwmon/hwmon2";
+    const base_device = "/sys/class/hwmon/hwmon1/device";
+    const base_hwmon = "/sys/class/hwmon/hwmon1";
 
     const mem_total_path = try fmt.allocPrint(allocator, "{s}/mem_info_vram_total", .{base_device});
     defer allocator.free(mem_total_path);
