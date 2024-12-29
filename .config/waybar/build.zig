@@ -1,4 +1,5 @@
 const std = @import("std");
+const Build = std.Build;
 
 const Executable = struct {
     name: []const u8,
@@ -13,10 +14,10 @@ const executables = [_]Executable{
     .{ .name = "updates", .source = "src/updates.zig" },
 };
 
-pub fn build(b: *std.Build) void {
+pub fn build(b: *Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{
-        .preferred_optimize_mode = .ReleaseFast,
+        .preferred_optimize_mode = .ReleaseSmall,
     });
 
     for (executables) |exe| {
@@ -38,17 +39,4 @@ pub fn build(b: *std.Build) void {
         const run_step = b.step(b.fmt("run-{s}", .{exe.name}), b.fmt("Run the {s} executable", .{exe.name}));
         run_step.dependOn(&run_cmd.step);
     }
-
-    const fmt_step = b.step("fmt", "Check source formatting");
-    const fmt_cmd = b.addSystemCommand(&[_][]const u8{ "zig", "fmt", "--check", "src" });
-    fmt_step.dependOn(&fmt_cmd.step);
-
-    const clean_step = b.step("clean", "Clean build artifacts");
-    const clean_cmd = b.addSystemCommand(&[_][]const u8{
-        "rm",
-        "-rf",
-        "zig-cache",
-        "zig-out",
-    });
-    clean_step.dependOn(&clean_cmd.step);
 }

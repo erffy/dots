@@ -1,4 +1,14 @@
+/**
+ * Waybar Style Configuration
+ * 
+ * This file contains the CSS styles for the Waybar interface.
+ * It includes general styling, tooltip styling, workspace button
+ * styling, module styling, and animations.
+ * 
+ */
+
 @import 'themes/catppuccin.css';
+
 
 /* General Styling */
 * {
@@ -9,19 +19,20 @@
 }
 
 #waybar {
-  border-radius: 80px;
-  background: rgba(0, 0, 0, 0.5);
+  border-radius: 25px;
   padding: 5px;
-  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(-45deg, @mantle, @base, @crust, @base, @mantle);
+  animation: gradient 7s ease infinite;
+  background-size: 400% 400%;
 }
 
 /* Tooltip Styling */
 tooltip {
   color: @text;
-  background: rgba(0, 0, 0, 0.85);
-  border-radius: 10px;
-  padding: 5px;
-  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(-45deg, @mantle, @base, @crust, @base, @mantle);
+  animation: gradient 7s ease infinite;
+  background-size: 400% 400%;
+  border-radius: 15px;
 }
 
 /* Workspace Styling */
@@ -32,13 +43,12 @@ tooltip {
   margin: 0;
   padding-left: 5px;
   padding-right: 5px;
-  background: transparent;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #workspaces button:hover {
   color: @sapphire;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 #workspaces button.active,
@@ -60,6 +70,7 @@ tooltip {
 #custom-memory,
 #mpris,
 #custom-ping,
+#custom-wallpaper,
 #custom-updates,
 #custom-brightness,
 #custom-gpu,
@@ -133,4 +144,25 @@ tooltip {
 /* Updates */
 #custom-updates {
   color: @mauve;
+}
+
+/** * 
+ * This animation creates a smooth gradient background effect by changing
+ * the background position over time.
+ * 
+ * This can be used to create visually appealing transitions for elements
+ * that utilize gradient backgrounds.
+ */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }

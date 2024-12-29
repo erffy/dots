@@ -18,8 +18,8 @@
   "modules-right": [
     "tray",
     "mpris",
-    "custom/updates",
     "battery",
+    "custom/updates",
     "custom/brightness",
     "wireplumber",
     "clock"
