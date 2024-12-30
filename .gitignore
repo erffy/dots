@@ -40,6 +40,9 @@
 !.config/sway
 !.config/sway/**
 
+!.config/swaync
+!.config/swaync/**
+
 !.config/systemd
 !.config/systemd/**
 
