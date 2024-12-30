@@ -15,7 +15,7 @@ const TARGET = "8.8.8.8";
 const PACKET_SIZE = 64;
 const TIMEOUT_MS: i64 = 5000;
 
-fn calculateChecksum(data: []const u8) u16 {
+inline fn calculateChecksum(data: []const u8) u16 {
     var sum: u32 = 0;
     var i: usize = 0;
 
@@ -29,7 +29,7 @@ fn calculateChecksum(data: []const u8) u16 {
     return ~@as(u16, @truncate(sum));
 }
 
-fn createIcmpPacket(allocator: mem.Allocator) ![]u8 {
+inline fn createIcmpPacket(allocator: mem.Allocator) ![]u8 {
     var packet = try allocator.alloc(u8, PACKET_SIZE);
     @memset(packet, 0);
 
@@ -43,7 +43,7 @@ fn createIcmpPacket(allocator: mem.Allocator) ![]u8 {
     return packet;
 }
 
-fn ping(allocator: mem.Allocator, ip_address: []const u8) !PingResult {
+noinline fn ping(allocator: mem.Allocator, ip_address: []const u8) !PingResult {
     const socket = try posix.socket(posix.AF.INET, posix.SOCK.DGRAM, posix.IPPROTO.ICMP);
     defer posix.close(socket);
 

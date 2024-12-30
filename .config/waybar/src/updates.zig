@@ -18,7 +18,7 @@ const UpdateInfo = struct {
     new_version: [MAX_VERSION_LENGTH + 1]u8,
 };
 
-fn escapeJson(input: []const u8, output: []u8) void {
+noinline fn escapeJson(input: []const u8, output: []u8) void {
     const escape_chars = &[_]u8{ '"', '\\', '\n', '\r', '\t' };
     const escape_replacements = &[_]u8{ '"', '\\', 'n', 'r', 't' };
     var j: usize = 0;
@@ -44,7 +44,7 @@ fn compareUpdates(context: void, a: UpdateInfo, b: UpdateInfo) bool {
     return mem.lessThan(u8, &a.pkg_name, &b.pkg_name);
 }
 
-fn parseLine(line: []const u8, info: *UpdateInfo) bool {
+noinline fn parseLine(line: []const u8, info: *UpdateInfo) bool {
     const trimmed = mem.trim(u8, line, &ascii.whitespace);
     if (trimmed.len == 0) return false;
 
@@ -131,7 +131,7 @@ const CheckUpdatesError = error{
     CommandFailed,
 };
 
-pub fn checkupdates() ![]u8 {
+noinline fn checkupdates() ![]u8 {
     const tmp_base = std.posix.getenv("TMPDIR") orelse "/var/tmp";
     const uid = std.posix.getenv("EUID") orelse "1000";
 
@@ -178,7 +178,7 @@ pub fn checkupdates() ![]u8 {
     return updates;
 }
 
-fn getUpdates(db_path: []const u8) ![]u8 {
+noinline fn getUpdates(db_path: []const u8) ![]u8 {
     var child = process.Child.init(&[_][]const u8{
         "pacman",
         "-Qu",
@@ -212,7 +212,7 @@ fn getUpdates(db_path: []const u8) ![]u8 {
     return lines.toOwnedSlice();
 }
 
-fn runCommand(argv: []const []const u8) !u8 {
+inline fn runCommand(argv: []const []const u8) !u8 {
     var child = process.Child.init(argv, allocator);
     child.stderr_behavior = .Ignore;
     child.stdout_behavior = .Ignore;

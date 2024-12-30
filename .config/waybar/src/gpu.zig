@@ -19,7 +19,7 @@ const GPUInfo = struct {
     memory_busy_percent: u64,
 };
 
-fn readSysFile(path: []const u8) ![]const u8 {
+inline fn readSysFile(path: []const u8) ![]const u8 {
     const file = try fs.cwd().openFile(path, .{});
     defer file.close();
 
@@ -30,21 +30,21 @@ fn readSysFile(path: []const u8) ![]const u8 {
     return mem.trim(u8, content, " \n");
 }
 
-fn parseNumber(content: []const u8) u64 {
+inline fn parseNumber(content: []const u8) u64 {
     return fmt.parseInt(u64, content, 10) catch |err| blk: {
         debug.print("Number parsing error: {}\n", .{err});
         break :blk 0;
     };
 }
 
-fn parseFloat(content: []const u8) f64 {
+inline fn parseFloat(content: []const u8) f64 {
     return fmt.parseFloat(f64, content) catch |err| blk: {
         debug.print("Float parsing error: {}\n", .{err});
         break :blk 0.0;
     };
 }
 
-fn findPath(base_paths: []const []const u8) ![]const u8 {
+inline fn findPath(base_paths: []const []const u8) ![]const u8 {
     for (base_paths) |path| {
         const file = fs.cwd().openFile(path, .{}) catch continue;
         defer file.close();
@@ -53,7 +53,7 @@ fn findPath(base_paths: []const []const u8) ![]const u8 {
     return error.PathNotFound;
 }
 
-fn getGPUInfo(allocator: mem.Allocator) !GPUInfo {
+noinline fn getGPUInfo(allocator: mem.Allocator) !GPUInfo {
     const base_device = "/sys/class/hwmon/hwmon1/device";
     const base_hwmon = "/sys/class/hwmon/hwmon1";
 
@@ -97,7 +97,7 @@ fn getGPUInfo(allocator: mem.Allocator) !GPUInfo {
 const FmtSize = struct {
     size: u64,
 
-    pub fn format(self: FmtSize, comptime frmt: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
+    pub inline fn format(self: FmtSize, comptime frmt: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
         return if (self.size >= GIGA) {
             try fmt.formatType(@as(f64, @floatFromInt(self.size)) / GIGA, frmt, options, writer, 0);
             try writer.writeByte('G');
@@ -114,7 +114,7 @@ const FmtSize = struct {
     }
 };
 
-fn fmtSize(size: u64) FmtSize {
+inline fn fmtSize(size: u64) FmtSize {
     return .{ .size = size };
 }
 

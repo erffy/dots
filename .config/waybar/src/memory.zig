@@ -11,7 +11,7 @@ const GIGA: u64 = KILO * MEGA;
 const FmtSize = struct {
     size: u64,
 
-    pub fn format(self: FmtSize, comptime frmt: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
+    pub inline fn format(self: FmtSize, comptime frmt: []const u8, options: fmt.FormatOptions, writer: anytype) !void {
         const scaled_size = self.size * KILO;
         return if (scaled_size >= GIGA) {
             try fmt.formatType(@as(f64, @floatFromInt(scaled_size)) / GIGA, frmt, options, writer, 0);
@@ -29,7 +29,7 @@ const FmtSize = struct {
     }
 };
 
-fn fmtSize(size: u64) FmtSize {
+inline fn fmtSize(size: u64) FmtSize {
     return .{ .size = size };
 }
 
@@ -55,7 +55,7 @@ const MemoryInfo = struct {
     page_tables: u64 = 0,
     slab: u64 = 0,
 
-    pub fn format(mem_info: MemoryInfo, comptime _: []const u8, _: fmt.FormatOptions, writer: anytype) !void {
+    pub inline fn format(mem_info: MemoryInfo, comptime _: []const u8, _: fmt.FormatOptions, writer: anytype) !void {
         const total_usage = mem_info.mem_used + mem_info.swap_used;
         const total_percentage = @as(f64, @floatFromInt(total_usage)) / @as(f64, @floatFromInt(mem_info.mem_total + mem_info.swap_total)) * 100;
 
@@ -87,13 +87,13 @@ const MemoryInfo = struct {
     }
 };
 
-fn asInt(s: []const u8) u128 {
+inline fn asInt(s: []const u8) u128 {
     var buf = [1]u8{0} ** 16;
     if (s.len <= buf.len) @memcpy(buf[0..s.len], s);
     return @bitCast(buf);
 }
 
-fn parse() !MemoryInfo {
+noinline fn parse() !MemoryInfo {
     var file_buf: [1024]u8 = undefined;
     var content = try fs.cwd().readFile("/proc/meminfo", &file_buf);
 
