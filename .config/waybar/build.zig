@@ -29,6 +29,8 @@ pub fn build(b: *Build) void {
             .link_libc = true,
         });
 
+        exe_obj.want_lto = true;
+
         const install_exe = b.addInstallArtifact(exe_obj, .{});
         b.getInstallStep().dependOn(&install_exe.step);
 
