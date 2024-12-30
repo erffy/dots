@@ -22,7 +22,8 @@
     "custom/updates",
     "custom/brightness",
     "wireplumber",
-    "clock"
+    "clock",
+    "custom/notification"
   ],
   "tray": {
     "icon-size": 16,
@@ -128,5 +129,15 @@
     "on-click-right": "ddcutil --noconfig --noverify -b 1 setvcp 10 100",
     "interval": 1,
     "tooltip": false
+  },
+  "custom/notification": {
+    "tooltip": false,
+    "format": "  {}",
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true
   }
 }

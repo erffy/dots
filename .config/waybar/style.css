@@ -7,8 +7,8 @@
  * 
  */
 
+@import 'themes/dracula.css';
 @import 'themes/catppuccin.css';
-
 
 /* General Styling */
 * {
@@ -72,6 +72,7 @@ tooltip {
 #custom-ping,
 #custom-wallpaper,
 #custom-updates,
+#custom-notification,
 #custom-brightness,
 #custom-gpu,
 #clock,
@@ -79,13 +80,12 @@ tooltip {
 #wireplumber,
 #network,
 #tray {
-  padding-right: 10px;
-  padding-left: 10px;
+  padding-right: 9px;
+  padding-left: 9px;
 }
 
 /* Clock */
 #clock {
-  margin-right: 5px;
   color: @rosewater;
 }
 
@@ -102,6 +102,7 @@ tooltip {
 
 /* CPU */
 #cpu {
+  margin-left: 5px;
   color: @maroon;
 }
 
@@ -144,6 +145,13 @@ tooltip {
 /* Updates */
 #custom-updates {
   color: @mauve;
+}
+
+/* Notifications */
+#custom-notification {
+  padding-left: 0;
+  margin-right: 5px;
+  color: @comment;
 }
 
 /** * 

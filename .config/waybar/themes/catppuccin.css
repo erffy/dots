@@ -1,3 +1,11 @@
+/* 
+ * Catppuccin Color Definitions
+ * 
+ * This file contains the color definitions for the Catppuccin theme used in Waybar.
+ * Each color is defined using the @define-color directive, which allows for easy 
+ * customization and theming of the interface.
+ */
+
 @define-color rosewater #f5e0dc;
 @define-color flamingo #f2cdcd;
 @define-color pink #f5c2e7;
