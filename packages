@@ -1,12 +1,11 @@
 alacritty
-alsa-tools
 ark
 autotiling-rs
 bemoji
 copyq
-dunst
 fakeroot
 fish
+fisher
 grim
 imv
 hyprpicker
@@ -22,8 +21,6 @@ rofi-wayland
 slurp
 sway
 swaybg
-swayidle
-swaylock
 swappy
 thunar
 thunar-archive-plugin
