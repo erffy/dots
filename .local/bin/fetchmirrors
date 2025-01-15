@@ -1,50 +1,242 @@
 #!/usr/bin/env bash
 
-_exit() {
-  rm -f /var/tmp/mirror.lock
-  echo -e "$2"
-  exit $1
-}
-
 PROTOCOL="https"
 MIRROR_DIR="/etc/pacman.d"
-declare -A MIRRORLISTS=(
-  ["arch"]="mirrorlist"
-  ["cachyos"]="cachyos-mirrorlist"
-  ["chaotic-aur"]="chaotic-mirrorlist"
+LOCK_FILE="/var/tmp/mirror.lock"
+BACKUP_DIR="${MIRROR_DIR}/backup"
+LOG_FILE="/var/log/mirror-updates.log"
+MAX_RATE_MIRRORS_RETRIES=3
+TIMEOUT_SECONDS=180
+
+declare -A COLORS=(
+  ["RED"]="\033[31m"
+  ["GREEN"]="\033[32m"
+  ["YELLOW"]="\033[33m"
+  ["BLUE"]="\033[34m"
+  ["MAGENTA"]="\033[35m"
+  ["CYAN"]="\033[36m"
+  ["RESET"]="\033[0m"
 )
 
-RED="\033[31m"
-GREEN="\033[32m"
-YELLOW="\033[33m"
-RESET="\033[0m"
+log() {
+  local level="$1"
+  local message="$2"
+  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  echo -e "${timestamp} [${level}] ${message}" >> "$LOG_FILE"
+}
 
-[ $EUID -ne 0 ] && _exit 1 "${RED}This script requires root.${RESET}"
+print_colored() {
+  local color="${COLORS[$1]:-${COLORS[RESET]}}"
+  local message="$2"
+  echo -e "${color}${message}${COLORS[RESET]}"
+}
 
-command -v rate-mirrors &>/dev/null || _exit 1 "${RED}Error: 'rate-mirrors' is not installed.${RESET}"
+cleanup() {
+  rm -f "$LOCK_FILE"
+}
 
-if [[ -f /var/tmp/mirror.lock ]]; then
-  _exit 1 "${RED}Error: Another instance of this script is running.${RESET}"
-fi
-
-touch /var/tmp/mirror.lock
-
-TOTAL_MIRRORS=${#MIRRORLISTS[@]}
-c=0
-
-echo -e "${YELLOW}Starting mirror list updates...${RESET}"
-sleep 0.5
-for i in "${!MIRRORLISTS[@]}"; do
-  echo -ne "[${YELLOW}$((++c))/$TOTAL_MIRRORS${RESET}] ${YELLOW}Updating $i mirrors...${RESET}\033[0K\r"
-
-  if rate-mirrors --allow-root --disable-comments-in-file --protocol $PROTOCOL --save="$MIRROR_DIR/${MIRRORLISTS[$i]}" "$i" >/dev/null 2>&1; then
-    echo -e "[${GREEN}$c/$TOTAL_MIRRORS${RESET}] ${GREEN}$i mirrors updated successfully.${RESET}"
+_exit() {
+  local exit_code=$1
+  local message="$2"
+  cleanup
+  
+  if [[ $exit_code -eq 0 ]]; then
+    log "INFO" "$message"
   else
-    echo -e "[${RED}$c/$TOTAL_MIRRORS${RESET}] ${RED}Error: Failed to update $i mirrors.${RESET}"
-    _exit 1 "${RED}Failed to update $i mirrors. Exiting.${RESET}"
+    log "ERROR" "$message"
   fi
+  
+  print_colored "${exit_code:-0}" "$message"
+  exit "$exit_code"
+}
 
-  sleep 1.5
+check_dependencies() {
+  local deps=("rate-mirrors" "curl" "timeout")
+  for dep in "${deps[@]}"; do
+    if ! command -v "$dep" &>/dev/null; then
+      _exit 1 "Error: '$dep' is not installed."
+    fi
+  done
+}
+
+create_backup() {
+  mkdir -p "$BACKUP_DIR"
+  local timestamp=$(date '+%Y%m%d_%H%M%S')
+  local backup_count=0
+  
+  find "$MIRROR_DIR" -maxdepth 1 -name "*-mirrorlist" -type f | while read -r mirrorlist; do
+    cp "$mirrorlist" "${BACKUP_DIR}/$(basename "$mirrorlist")_${timestamp}.bak"
+    ((backup_count++))
+  done
+  
+  return $backup_count
+}
+
+check_internet() {
+  if ! timeout 10 curl -s --head https://archlinux.org >/dev/null; then
+    _exit 1 "Error: No internet connection available."
+  fi
+}
+
+detect_mirrorlists() {
+  declare -A detected_lists=(
+    ["arch"]="mirrorlist"
+  )
+  
+  while IFS= read -r file; do
+    local basename=$(basename "$file")
+    local repo_name="${basename%-mirrorlist}"
+    
+    [[ "$file" == *".bak"* ]] && continue
+    [[ "$file" == *"v3"* ]] && continue
+    [[ "$file" == *"v4"* ]] && continue
+    [[ "$repo_name" == "mirrorlist" ]] && continue
+    
+    detected_lists["$repo_name"]="$basename"
+  done < <(find "$MIRROR_DIR" -maxdepth 1 -name "*-mirrorlist" -type f)
+  
+  echo "declare -A MIRRORLISTS=("
+  for repo in "${!detected_lists[@]}"; do
+    echo "  [\"$repo\"]=\"${detected_lists[$repo]}\""
+  done
+  echo ")"
+}
+
+update_mirror() {
+  local repo="$1"
+  local mirrorlist="${MIRRORLISTS[$repo]}"
+  local retry_count=0
+  local temp_file=$(mktemp)
+  
+  while [[ $retry_count -lt $MAX_RATE_MIRRORS_RETRIES ]]; do
+    if timeout "$TIMEOUT_SECONDS" rate-mirrors \
+      --allow-root \
+      --disable-comments-in-file \
+      --protocol "$PROTOCOL" \
+      --save="$temp_file" \
+      "$repo" >/dev/null 2>&1; then
+      
+      if [[ -s "$temp_file" ]]; then
+        mv "$temp_file" "$MIRROR_DIR/$mirrorlist"
+        return 0
+      fi
+    fi
+    
+    ((retry_count++))
+    sleep 2
+  done
+  
+  rm -f "$temp_file"
+  return 1
+}
+
+show_help() {
+  cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Options:
+  -h, --help           Show this help message
+  -p, --protocol       Specify protocol (default: https)
+  -t, --timeout        Specify timeout in seconds (default: 30)
+  -b, --backup         Create backup only
+  -l, --list           List detected repositories
+  -r, --repository     Update specific repository only
+
+Example:
+  $(basename "$0") --protocol http --timeout 45
+  $(basename "$0") -r arch
+EOF
+}
+
+trap cleanup EXIT
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    -p|--protocol)
+      if [[ ! "$2" =~ ^(http|https|ftp)$ ]]; then
+        _exit 1 "Error: Invalid protocol '$2'. Must be http, https, or ftp."
+      fi
+      PROTOCOL="$2"
+      shift 2
+      ;;
+    -t|--timeout)
+      if ! [[ "$2" =~ ^[0-9]+$ ]]; then
+        _exit 1 "Error: Timeout must be a positive integer."
+      fi
+      TIMEOUT_SECONDS="$2"
+      shift 2
+      ;;
+    -b|--backup)
+      create_backup
+      _exit 0 "Backup created successfully."
+      ;;
+    -l|--list)
+      print_colored "CYAN" "Detected repositories:"
+      eval "$(detect_mirrorlists)"
+      for repo in "${!MIRRORLISTS[@]}"; do
+        echo "  - $repo (${MIRRORLISTS[$repo]})"
+      done
+      exit 0
+      ;;
+    -r|--repository)
+      SELECTED_REPO="$2"
+      shift 2
+      ;;
+    *)
+      _exit 1 "Error: Invalid option '$1'"
+      ;;
+  esac
 done
 
-_exit 0 "${GREEN}All mirror lists updated successfully.${RESET}"
+[[ $EUID -ne 0 ]] && _exit 1 "This script requires root privileges."
+[[ -f "$LOCK_FILE" ]] && _exit 1 "Error: Another instance is running."
+
+touch "$LOCK_FILE"
+check_dependencies
+check_internet
+
+if ! create_backup; then
+  _exit 1 "Error: Failed to create backup."
+fi
+
+eval "$(detect_mirrorlists)"
+
+if [[ -n "$SELECTED_REPO" ]]; then
+  if [[ -z "${MIRRORLISTS[$SELECTED_REPO]}" ]]; then
+    _exit 1 "Error: Invalid repository '$SELECTED_REPO'"
+  fi
+  declare -A SELECTED_LIST=([${SELECTED_REPO}]="${MIRRORLISTS[${SELECTED_REPO}]}")
+  MIRRORLISTS=()
+  for key in "${!SELECTED_LIST[@]}"; do
+    MIRRORLISTS[$key]="${SELECTED_LIST[$key]}"
+  done
+fi
+
+TOTAL_MIRRORS=${#MIRRORLISTS[@]}
+[[ $TOTAL_MIRRORS -eq 0 ]] && _exit 1 "No mirrorlist files detected."
+
+print_colored "YELLOW" "Found $TOTAL_MIRRORS mirrorlist(s) to update..."
+log "INFO" "Starting mirror list updates for $TOTAL_MIRRORS repositories"
+
+c=0
+for repo in "${!MIRRORLISTS[@]}"; do
+  ((c++))
+  print_colored "YELLOW" "[${c}/${TOTAL_MIRRORS}] Updating ${repo} mirrors..."
+  
+  if update_mirror "$repo"; then
+    print_colored "GREEN" "[${c}/${TOTAL_MIRRORS}] ${repo} mirrors updated successfully."
+    log "INFO" "${repo} mirrors updated successfully"
+  else
+    print_colored "RED" "[${c}/${TOTAL_MIRRORS}] Failed to update ${repo} mirrors."
+    log "ERROR" "Failed to update ${repo} mirrors"
+    _exit 1 "Failed to update ${repo} mirrors. Exiting."
+  fi
+  
+  sleep 1
+done
+
+_exit 0 "All mirror lists updated successfully."

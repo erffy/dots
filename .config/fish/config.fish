@@ -11,3 +11,4 @@ alias zd="z"
 alias y="yay"
 
 set -gx PNPM_HOME "$HOME/.local/share/pnpm"
+fish_add_path /home/eren/.spicetify

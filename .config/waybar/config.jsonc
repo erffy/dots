@@ -99,24 +99,24 @@
   },
   "custom/ping": {
     "interval": 1,
-    "exec": "~/.config/waybar/bin/ping",
+    "exec": "~/.config/waybar/bin/ping", // You need to grab this file from github.com/erffy/zig-waybar-contrib/releases
     "return-type": "json"
   },
   "custom/updates": {
     "interval": 120,
     "escape": true,
-    "exec": "~/.config/waybar/bin/updates",
+    "exec": "~/.config/waybar/bin/updates", // You need to grab this file from github.com/erffy/zig-waybar-contrib/releases
     "on-click-right": "pkexec ~/.local/bin/fetchmirrors",
     "return-type": "json"
   },
   "custom/memory": {
     "interval": 1,
-    "exec": "~/.config/waybar/bin/memory",
+    "exec": "~/.config/waybar/bin/memory", // You need to grab this file from github.com/erffy/zig-waybar-contrib/releases
     "return-type": "json"
   },
   "custom/gpu": {
     "interval": 1,
-    "exec": "~/.config/waybar/bin/gpu",
+    "exec": "~/.config/waybar/bin/gpu", // You need to grab this file from github.com/erffy/zig-waybar-contrib/releases
     "return-type": "json"
   },
   "custom/brightness": {
