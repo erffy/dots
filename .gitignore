@@ -40,6 +40,9 @@
 !.config/sway
 !.config/sway/**
 
+!.config/hypr
+!.config/hypr/**
+
 !.config/swaync
 !.config/swaync/**
 
