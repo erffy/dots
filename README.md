@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> I'm no longer using Sway. Some configurations may be outdated.
+
+
 ![](assets/banner.png)
 
 <br>
