@@ -18,13 +18,13 @@
   "modules": [
     {
       "type": "os",
-      "format": "{2}",
+      "format": "{name}",
       "key": "    OS",
       "keyColor": "blue"
     },
     {
       "type": "kernel",
-      "format": "{2}",
+      "format": "{version}",
       "key": "    Kernel",
       "keyColor": "blue"
     },
@@ -35,29 +35,31 @@
     },
     {
       "type": "uptime",
-      "format": "{2}h, {3}m",
+      "format": "{hours}h, {minutes}m",
       "key": "    Uptime",
       "keyColor": "blue"
     },
     {
       "type": "wm",
+      "format": "{pretty-name}",
       "key": "    WM",
       "keyColor": "blue"
     },
     {
       "type": "de",
-      "format": "{1}",
+      "format": "{pretty-name}",
       "key": "    DE",
       "keyColor": "blue"
     },
     {
       "type": "locale",
+      "format": "{result}",
       "key": "    Locale",
       "keyColor": "blue"
     },
     {
       "type": "users",
-      "format": "{1}",
+      "format": "{name}",
       "key": "    User",
       "keyColor": "blue"
     }
