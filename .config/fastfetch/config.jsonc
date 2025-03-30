@@ -24,7 +24,7 @@
     },
     {
       "type": "kernel",
-      "format": "{version}",
+      "format": "{release}",
       "key": "    Kernel",
       "keyColor": "blue"
     },
@@ -40,14 +40,8 @@
       "keyColor": "blue"
     },
     {
-      "type": "wm",
-      "format": "{pretty-name}",
-      "key": "    WM",
-      "keyColor": "blue"
-    },
-    {
       "type": "de",
-      "format": "{pretty-name}",
+      "format": "{pretty-name} (v{version})",
       "key": "    DE",
       "keyColor": "blue"
     },
