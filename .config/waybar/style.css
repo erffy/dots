@@ -1,0 +1,176 @@
+/**
+ * Waybar Style Configuration
+ * 
+ * This file contains the CSS styles for the Waybar interface.
+ * It includes general styling, tooltip styling, workspace button
+ * styling, module styling, and animations.
+ * 
+ */
+
+@import 'themes/dracula.css';
+@import 'themes/catppuccin.css';
+
+/* General Styling */
+* {
+  font-family: 'JetBrains Mono Nerd Font', 'Font Awesome 6';
+  font-weight: 900;
+  font-size: 9px;
+  border: 0;
+}
+
+#waybar {
+  border-radius: 25px;
+  padding: 5px;
+  background: linear-gradient(-45deg, @mantle, @base, @crust, @base, @mantle);
+  animation: gradient 7s ease infinite;
+  background-size: 400% 400%;
+}
+
+/* Tooltip Styling */
+tooltip {
+  color: @text;
+  background: linear-gradient(-45deg, @mantle, @base, @crust, @base, @mantle);
+  animation: gradient 7s ease infinite;
+  background-size: 400% 400%;
+  border-radius: 15px;
+}
+
+/* Workspace Styling */
+#workspaces button {
+  color: @flamingo;
+  opacity: 0.5;
+  min-height: 15px;
+  margin: 0;
+  padding-left: 5px;
+  padding-right: 5px;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+#workspaces button:hover {
+  color: @sapphire;
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+#workspaces button.active,
+#workspaces button.focused {
+  color: @pink;
+  opacity: 1;
+}
+
+#workspaces button.urgent {
+  opacity: 1;
+  color: @red;
+  background-color: @yellow;
+  border-radius: 5px;
+}
+
+/* Module Styling */
+#cpu,
+#memory,
+#custom-memory,
+#mpris,
+#custom-ping,
+#custom-wallpaper,
+#custom-updates,
+#custom-notification,
+#custom-brightness,
+#custom-gpu,
+#clock,
+#battery,
+#wireplumber,
+#network,
+#tray {
+  padding-right: 9px;
+  padding-left: 9px;
+}
+
+/* Clock */
+#clock {
+  color: @rosewater;
+}
+
+/* Memory */
+#memory,
+#custom-memory {
+  color: @teal;
+}
+
+/* GPU */
+#custom-gpu {
+  color: @blue;
+}
+
+/* CPU */
+#cpu {
+  margin-left: 5px;
+  color: @maroon;
+}
+
+/* Network */
+#network {
+  color: @lavender;
+}
+
+/* Battery */
+#battery,
+#battery.charging {
+  color: @green;
+}
+
+#battery.warning:not(.charging) {
+  color: @yellow;
+}
+
+/* Wireplumber */
+#wireplumber {
+  color: @peach;
+}
+
+/* Media */
+#custom-media,
+#mpris {
+  color: @sky;
+}
+
+/* Brightness */
+#custom-brightness {
+  color: @yellow;
+}
+
+/* Ping */
+#custom-ping {
+  color: @flamingo;
+}
+
+/* Updates */
+#custom-updates {
+  color: @mauve;
+}
+
+/* Notifications */
+#custom-notification {
+  padding-left: 0;
+  margin-right: 5px;
+  color: @comment;
+}
+
+/** * 
+ * This animation creates a smooth gradient background effect by changing
+ * the background position over time.
+ * 
+ * This can be used to create visually appealing transitions for elements
+ * that utilize gradient backgrounds.
+ */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}

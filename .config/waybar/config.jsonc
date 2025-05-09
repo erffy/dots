@@ -1,0 +1,120 @@
+{
+  "layer": "top",
+  "position": "top",
+  "reload_style_on_change": true,
+  "margin-right": 15,
+  "margin-left": 15,
+  "margin-top": 7,
+  "modules-left": [
+    "cpu",
+    "custom/gpu",
+    "custom/memory",
+    "network",
+    "custom/ping"
+  ],
+  "modules-center": [
+    "hyprland/workspaces"
+  ],
+  "modules-right": [
+    "tray",
+    "mpris",
+    "battery",
+    "custom/updates",
+    "wireplumber",
+    "clock"
+  ],
+  "tray": {
+    "icon-size": 16,
+    "spacing": 6
+  },
+  "clock": {
+    "format": "  {:%I:%M %p ・   %m/%d/%y}",
+    "rotate": 0,
+    "tooltip-format": "<tt>{calendar}</tt>",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "on-scroll": 1,
+      "on-click-right": "mode",
+      "format": {
+        "months": "<span color='#fab387'><b>{}</b></span>",
+        "weekdays": "<span color='#f9e2af'><b>{}</b></span>",
+        "today": "<span color='#f38ba8'><b>{}</b></span>"
+      }
+    },
+    "actions": {
+      "on-click-right": "mode",
+      "on-click-forward": "tz_up",
+      "on-click-backward": "tz_down",
+      "on-scroll-up": "shift_up",
+      "on-scroll-down": "shift_down"
+    }
+  },
+  "wireplumber": {
+    "scroll-step": 5,
+    "max-volume": 150,
+    "format": "{icon}  {volume}%",
+    "format-muted": "",
+    "format-icons": {
+      "default": [
+        "",
+        "",
+        ""
+      ]
+    },
+    "on-click": "pavucontrol"
+  },
+  "cpu": {
+    "interval": 1,
+    "format": "  {usage}% ・ {max_frequency}GHz",
+    "min-length": 16,
+    "max-length": 20
+  },
+  "network": {
+    "interval": 1,
+    "format": "{icon}  {bandwidthTotalBytes}",
+    "format-disconnected": "",
+    "format-icons": {
+      "wifi": "",
+      "ethernet": "",
+      "linked": ""
+    },
+    "tooltip-format": "Gateway ・ {gwaddr}\nIP ・ {ipaddr}\nIF ・ {ifname}\n  {bandwidthDownBytes} ・   {bandwidthUpBytes}",
+    "tooltip-format-wifi": "SSID ・ {essid}\nGateway ・ {gwaddr}\nIP ・ {ipaddr}\nIF ・ {ifname}\nFrequency ・ {frequency}GHz\nStrength ・ {signalStrength}% ({signaldBm}dBm)\n  {bandwidthDownBytes} ・   {bandwidthUpBytes}",
+    "min-length": 10,
+    "max-length": 20
+  },
+  "mpris": {
+    "format": "{status_icon}  {title}",
+    "format-stopped": "",
+    "tooltip-format": "Player ・ {player}\nTitle ・ {title}\nArtist ・ {artist}\nAlbum ・ {album}\n{position} ・ {length} ({status})",
+    "status-icons": {
+      "paused": "",
+      "playing": ""
+    },
+    "min-length": 10,
+    "max-length": 40
+  },
+  "custom/ping": {
+    "interval": 1,
+    "exec": "~/.config/waybar/bin/ping", // You need to grab this file from github.com/erffy/zig-waybar-contrib/releases
+    "return-type": "json"
+  },
+  "custom/updates": {
+    "interval": 120,
+    "escape": true,
+    "exec": "~/.config/waybar/bin/updates", // You need to grab this file from github.com/erffy/zig-waybar-contrib/releases
+    "on-click-right": "pkexec ~/.local/bin/fetchmirrors",
+    "return-type": "json"
+  },
+  "custom/memory": {
+    "interval": 1,
+    "exec": "~/.config/waybar/bin/memory", // You need to grab this file from github.com/erffy/zig-waybar-contrib/releases
+    "return-type": "json"
+  },
+  "custom/gpu": {
+    "interval": 1,
+    "exec": "~/.config/waybar/bin/gpu", // You need to grab this file from github.com/erffy/zig-waybar-contrib/releases
+    "return-type": "json"
+  }
+}
