@@ -2,9 +2,9 @@
   "layer": "top",
   "position": "top",
   "reload_style_on_change": true,
-  "margin-right": 15,
-  "margin-left": 15,
-  "margin-top": 7,
+  "margin-right": 6,
+  "margin-left": 6,
+  "margin-top": 5,
   "modules-left": [
     "cpu",
     "custom/gpu",
