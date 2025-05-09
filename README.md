@@ -82,11 +82,3 @@ chmod +x ~/.local/bin/* ~/.config/waybar/bin/*
 ```bash
 reboot
 ```
-
----
-
-## 📸 Preview
-
-| Waybar | Launcher | Terminal |
-|--------|----------|----------|
-| ![Waybar](assets/waybar.png) | ![Launcher](assets/launcher.png) | ![Terminal](assets/terminal.png) |
