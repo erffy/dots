@@ -2,10 +2,10 @@
 @import 'shared/font.rasi'
 
 configuration {
-	  modi:                       "drun";
+    modi:                       "drun";
     show-icons:                 true;
     display-drun:               "";
-	  drun-display-format:        "{name}";
+    drun-display-format:        "{name}";
 }
 
 window {
@@ -22,8 +22,8 @@ window {
     padding:                     0px;
     border:                      0px solid;
     border-radius:               30px;
-    border-color:                @selected;
-    background-color:            @background;
+    border-color:                @surface0;
+    background-color:            @crust;
     cursor:                      "default";
 }
 
@@ -34,7 +34,7 @@ mainbox {
     padding:                     20px;
     border:                      0px solid;
     border-radius:               0px 0px 0px 0px;
-    border-color:                @selected;
+    border-color:                @surface0;
     background-color:            transparent;
     children:                    [ "inputbar", "listview" ];
 }
@@ -46,8 +46,8 @@ inputbar {
     padding:                     12px 16px;
     border:                      0;
     border-radius:               100%;
-    background-color:            @background-alt;
-    text-color:                  @foreground;
+    background-color:            @base;
+    text-color:                  @text;
     children:                    [ "prompt", "entry" ];
 }
 
@@ -75,8 +75,8 @@ entry {
 
 listview {
     enabled:                     true;
-    columns:                     4;
-    lines:                       5;
+    columns:                     5;
+    lines:                       6;
     cycle:                       false;
     dynamic:                     true;
     scrollbar:                   false;
@@ -90,17 +90,17 @@ listview {
     padding:                     0px;
     border:                      0px solid;
     border-radius:               0px;
-    border-color:                @selected;
+    border-color:                @surface0;
     background-color:            transparent;
-    text-color:                  @foreground;
+    text-color:                  @text;
     cursor:                      "default";
 }
 
 scrollbar {
     handle-width:                5px;
-    handle-color:                @selected;
+    handle-color:                @surface0;
     border-radius:               0px;
-    background-color:            @background-alt;
+    background-color:            @surface1;
 }
 
 element {
@@ -110,24 +110,24 @@ element {
     padding:                     10px;
     border:                      0px solid;
     border-radius:               0px;
-    border-color:                @selected;
+    border-color:                @surface0;
     background-color:            transparent;
-    text-color:                  @foreground;
+    text-color:                  @text;
     orientation:                 vertical;
     cursor:                      pointer;
 }
 
 element normal.normal {
     background-color:            transparent;
-    text-color:                  @foreground;
+    text-color:                  @text;
 }
 
 element selected.normal {
     border:                      0px 0px 2px 0px;
     border-radius:               12px;
-    border-color:                @selected;
-    background-color:            @background-alt;
-    text-color:                  @foreground;
+    border-color:                @surface0;
+    background-color:            @base;
+    text-color:                  @text;
 }
 
 element-icon {
@@ -139,7 +139,7 @@ element-icon {
 
 element-text {
     background-color:            transparent;
-    text-color:                  @foreground;
+    text-color:                  @text;
     highlight:                   inherit;
     cursor:                      pointer;
     vertical-align:              0.5;
@@ -150,14 +150,14 @@ error-message {
     padding:                     20px;
     border:                      0px solid;
     border-radius:               0px;
-    border-color:                @selected;
+    border-color:                @surface0;
     background-color:            black / 10%;
-    text-color:                  @foreground;
+    text-color:                  @text;
 }
 
 textbox {
     background-color:            transparent;
-    text-color:                  @foreground;
+    text-color:                  @text;
     vertical-align:              0.5;
     horizontal-align:            0.0;
     highlight:                   none;
