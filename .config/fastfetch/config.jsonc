@@ -41,8 +41,14 @@
     },
     {
       "type": "de",
-      "format": "{pretty-name} (v{version})",
+      "format": "{pretty-name} ({version})",
       "key": "    DE",
+      "keyColor": "blue"
+    },
+    {
+      "type": "wm",
+      "format": "{pretty-name} ({version})",
+      "key": "    WM",
       "keyColor": "blue"
     },
     {
