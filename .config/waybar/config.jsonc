@@ -20,6 +20,7 @@
     "mpris",
     "battery",
     "custom/updates",
+    "custom/brightness",
     "wireplumber",
     "clock"
   ],
@@ -95,11 +96,14 @@
     "min-length": 10,
     "max-length": 40
   },
-  //"custom/brightness": {
-  //  "signal": 1,
-  //  "exec": "~/.config/waybar/bin/brightness", // You need to grab this file from github.com/erffy/zig-waybar-contrib/releases
-  //  "return-type": "json"
-  //},
+  "custom/brightness": {
+    "signal": 1,
+    "interval": 0,
+    "exec": "~/.config/waybar/scripts.d/brightness.sh get",
+    //"on-scroll-up": "~/.config/waybar/scripts.d/brightness.sh up 5", // Not implemented yet
+    // "on-scroll-down": "~/.config/waybar/scripts.d/brightness.sh down 5", // Not implemented yet
+    "return-type": "json"
+  },
   "custom/ping": {
     "signal": 2,
     "interval": 0,
