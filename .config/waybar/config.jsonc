@@ -105,8 +105,7 @@
     "return-type": "json"
   },
   "custom/ping": {
-    "signal": 2,
-    "interval": 0,
+    "interval": 1,
     "exec": "~/.config/waybar/bin/ping",
     "return-type": "json"
   },
