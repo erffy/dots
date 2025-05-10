@@ -4,7 +4,7 @@
   "reload_style_on_change": true,
   "margin-right": 6,
   "margin-left": 6,
-  "margin-top": 5,
+  "margin-top": 3,
   "modules-left": [
     "cpu",
     "custom/gpu",
@@ -25,7 +25,7 @@
     "clock"
   ],
   "tray": {
-    "icon-size": 16,
+    "icon-size": 13,
     "spacing": 6
   },
   "clock": {
