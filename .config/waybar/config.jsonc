@@ -99,9 +99,7 @@
   "custom/brightness": {
     "signal": 1,
     "interval": 0,
-    "exec": "~/.config/waybar/scripts.d/brightness.sh get",
-    //"on-scroll-up": "~/.config/waybar/scripts.d/brightness.sh up 5", // Not implemented yet
-    // "on-scroll-down": "~/.config/waybar/scripts.d/brightness.sh down 5", // Not implemented yet
+    "exec": "~/.config/waybar/scripts.d/brightness.sh",
     "return-type": "json"
   },
   "custom/ping": {
