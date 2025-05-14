@@ -11,6 +11,9 @@
 !.local
 !assets/**
 
+!.config/nvim
+!.config/nvim/**
+
 !.config/alacritty
 !.config/alacritty/**
 
